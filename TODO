@@ -1,3 +1,3 @@
-1) Finish sequential server
-2) Write client
+1) Clean up/comment SHTTPTestClient.java 
+2) Clean up/comment SequentialServer.java
 3) Write the rest of the servers
