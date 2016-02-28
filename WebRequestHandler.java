@@ -6,6 +6,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.text.SimpleDateFormat;
 
 class WebRequestHandler {
 
@@ -13,6 +14,7 @@ class WebRequestHandler {
     static int     reqCount = 0;
 
     String WWW_ROOT;
+    String serverName;
     List<VirtualHost> virtualHosts;
     Socket connSocket;
     BufferedReader inFromClient;
@@ -97,6 +99,7 @@ class WebRequestHandler {
             for(VirtualHost v : virtualHosts){
                 if(v.serverName.equals(tokens[1])){
                     WWW_ROOT = v.documentRoot;
+                    serverName = v.serverName;
                 }
             }
           }
@@ -126,7 +129,12 @@ class WebRequestHandler {
     private void outputResponseHeader() throws Exception 
     {
         outToClient.writeBytes("HTTP/1.0 200 Document Follows\r\n");
-        outToClient.writeBytes("Set-Cookie: MyCool433Seq12345\r\n");
+        outToClient.writeBytes("Date: " 
+            + new SimpleDateFormat("EEEE, dd MMM HH:mm:ss z").format(new Date()) + "\r\n");
+
+        if(serverName != null){
+            outToClient.writeBytes("Server: " + serverName + "\r\n");
+        }
 
         if (urlName.endsWith(".jpg"))
             outToClient.writeBytes("Content-Type: image/jpeg\r\n");
