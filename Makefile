@@ -5,4 +5,4 @@ test: sequential
 	java SequentialServer -config config.conf
 
 test-client: sequential
-	java SHTTPTestClient -server localhost -servname test -port 6789 -parallel -1 -files filelist -T 1
+	java SHTTPTestClient -server localhost -servname test -port 6789 -parallel 100 -files filelist -T 1
