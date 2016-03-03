@@ -11,18 +11,14 @@ class SequentialServer{
 	
     public static int serverPort = 6789;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
-    //public static String WWW_ROOT = "/home/httpd/html/zoo/classes/cs433/";
     public static String WWW_ROOT = "./";
 
     public static void main(String args[]) throws Exception  {
-	
 
-	 ConfigParser cp = null;
-
-	 // TODO make sure -config is set!
-	 if (args.length >= 2){
+	 // Get config file
+	 if (args.length >= 2 && args[0].equals("-config")){
 	 	try{
-	 		cp = new ConfigParser(args[1]);
+	 		ConfigParser cp = new ConfigParser(args[1]);
 	 		virtualHosts = cp.virtualHosts;
 	 		if(cp.port != -1)
 	 			serverPort = cp.port;
