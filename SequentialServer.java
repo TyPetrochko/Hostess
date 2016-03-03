@@ -19,6 +19,7 @@ class SequentialServer{
 
 	 ConfigParser cp = null;
 
+	 // TODO make sure -config is set!
 	 if (args.length >= 2){
 	 	try{
 	 		cp = new ConfigParser(args[1]);

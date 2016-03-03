@@ -1,7 +1,7 @@
 sequential: SequentialServer.java WebRequestHandler.java ConfigParser.java SHTTPTestClient.java
 	javac *.java
 
-test: sequential
+test-sequential: sequential
 	java SequentialServer -config config.conf
 
 test-client: sequential

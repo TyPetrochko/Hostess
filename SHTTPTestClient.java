@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 class SHTTPTestClient{
 	public static Socket socket;
@@ -24,9 +25,24 @@ class SHTTPTestClient{
 		// Get command line args
 		setCommandLineArgs(args);
 
+		Thread[] threadList = new Thread[threads];
 		for(int i = 0; i < threads; i++){
-			new Thread(new Tester(testingTime)).start();
+			threadList[i] = new Thread(new Tester(testingTime));
+			threadList[i].start();
 		}
+
+		try{
+			for (Thread t : threadList){
+				t.join();
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		System.out.println("Total number of files downloaded: " + Tester.totalFilesDownloaded.get());
+		System.out.println("Total number of files downloaded/sec: " + (Tester.totalFilesDownloaded.get() / (testingTime * 1000)));
+		System.out.println("Average wait time/download (ms): " + (Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
+		System.out.println("Average bytes downloaded/sec: " + (Tester.totalBytesDownloaded.get() / (testingTime * 1000)));
 	} // end main
 
 	public static void printUsage(){
@@ -77,7 +93,15 @@ class SHTTPTestClient{
 class Tester implements Runnable{
 	public Socket socket;
 	public int numFilesDownloaded = 0;
+	public long bytesDownloaded = 0;
+	public long waitTime = 0;
+	public long numWaits = 0;
 	public double timeToRun = 0;
+
+	static AtomicInteger totalFilesDownloaded = new AtomicInteger(0);
+	static AtomicLong totalBytesDownloaded = new AtomicLong(0);
+	static AtomicLong totalNumWaits = new AtomicLong(0);
+	static AtomicLong totalWaitTime = new AtomicLong(0);
 
 	public Tester(double timeToRun){
 		this.timeToRun = timeToRun;
@@ -117,8 +141,17 @@ class Tester implements Runnable{
 					outWriter.write("\r\n");
 					outWriter.flush();
 
+					// Wait for a reply
+					long startedWaiting = System.currentTimeMillis();
+
 					// Receive response from network
 					String response = inReader.readLine();
+
+					// Log how much time we waited
+					waitTime += System.currentTimeMillis() - startedWaiting;
+					numWaits ++;
+
+					// Was the request ok?
 					if(!response.split(" ")[1].equals("200")){
 						return;
 					}
@@ -130,6 +163,7 @@ class Tester implements Runnable{
 						if(line.contains("Content-Length")){
 							int responseLength = Integer.parseInt(tokens[1]);
 							inReader.skip(responseLength);
+							bytesDownloaded += responseLength;
 							break;
 						}
 						line = inReader.readLine();
@@ -138,7 +172,10 @@ class Tester implements Runnable{
 				} // end for-loop over files
 			} // end timer while-loop
 
-			System.out.println("Downloaded " + numFilesDownloaded + " files");
+			totalFilesDownloaded.addAndGet(numFilesDownloaded);
+			totalWaitTime.addAndGet(waitTime);
+			totalNumWaits.addAndGet(numWaits);
+			totalBytesDownloaded.addAndGet(bytesDownloaded);
 
 		}catch(Exception e){
 			System.out.println("Error downloading files from " 
