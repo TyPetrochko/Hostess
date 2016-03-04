@@ -6,6 +6,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 class WebServer{
 	
@@ -110,7 +111,8 @@ class WebServer{
     // have all threads compete on a single socket
     public static void competing() throws IOException{
         // create thread pool
-        CompetingServiceThread[] threads = new CompetingServiceThread[threadPoolSize];
+        CompetingServiceThread[] threads = 
+        new CompetingServiceThread[threadPoolSize];
 
         // start all threads
         for (int i = 0; i < threads.length; i++) {
@@ -119,16 +121,59 @@ class WebServer{
         }
     };
 
-    // NOT DONE YET
+    // Use a shared queue with busy waiting
     public static void busyWait() throws IOException{
     	List<Socket> socketPool = new Vector<Socket>();
 
-    	while (true) {
+    	BusyWaitServiceThread[] threads = 
+        new BusyWaitServiceThread[threadPoolSize];
+
+    	// start all threads
+        for (int i = 0; i < threads.length; i++) {
+	        threads[i] = new BusyWaitServiceThread(socketPool, virtualHosts); 
+	        threads[i].start();
+        }
+
+    	new BusyWaitDelegate(socketPool, listenSocket).start();
+    };
+    public static void suspension(){
+    	List<Socket> socketPool = new Vector<Socket>();
+    	// ReentrantLock lock = new ReentrantLock();
+
+    	SuspensionServiceThread[] threads = 
+        new SuspensionServiceThread[threadPoolSize];
+
+    	// start all threads
+        for (int i = 0; i < threads.length; i++) {
+	        threads[i] = new SuspensionServiceThread(socketPool, virtualHosts); 
+	        threads[i].start();
+        }
+
+    	new SuspensionDelegate(socketPool, listenSocket).start();
+    };
+
+    public static void printUsage(){
+    	System.out.println("Usage: java WebServer <Server> -config config.conf");
+	 	System.out.println("\tServer: sequential | per-request-thread | competing | busywait | suspension");
+    }
+} // end of class WebServer
+
+class BusyWaitDelegate extends Thread {
+	private List<Socket> socketPool;
+	private ServerSocket welcomeSocket;
+
+	public BusyWaitDelegate(List <Socket> socketPool, 
+		ServerSocket welcomeSocket){
+
+		this.socketPool = socketPool;
+		this.welcomeSocket = welcomeSocket;
+	}
+
+	public void run (){
+		while (true) {
 	        try {
 		        // accept connection from connection queue
-		        Socket connSock = listenSocket.accept();
-		        System.out.println("Main thread retrieve connection from " 
-				                   + connSock);
+		        Socket connSock = welcomeSocket.accept();
 
 		        // how to assign to an idle thread?
 		        synchronized (socketPool) {
@@ -138,12 +183,34 @@ class WebServer{
 	        	System.out.println("server run failed.");
 	        } // end of catch
 	    } // end of loop
-    };
-    public static void suspension(){};
+	}
+}
 
-    public static void printUsage(){
-    	System.out.println("Usage: java WebServer <Server> -config config.conf");
-	 	System.out.println("\tServer: sequential | per-request-thread | competing | busywait | suspension");
-    }
+class SuspensionDelegate extends Thread {
+	private List<Socket> socketPool;
+	private ServerSocket welcomeSocket;
 
-} // end of class WebServer
+	public SuspensionDelegate(List <Socket> socketPool, 
+		ServerSocket welcomeSocket){
+
+		this.socketPool = socketPool;
+		this.welcomeSocket = welcomeSocket;
+	}
+
+	public void run (){
+		while (true) {
+	        try {
+		        // accept connection from connection queue
+		        Socket connSock = welcomeSocket.accept();
+
+		        // how to assign to an idle thread?
+		        synchronized (socketPool) {
+		            socketPool.add(connSock);
+		            socketPool.notifyAll();
+		        } // end of sync
+	        } catch (Exception e) {
+	        	System.out.println("server run failed.");
+	        } // end of catch
+	    } // end of loop
+	}
+}
