@@ -1,10 +1,12 @@
 import java.nio.channels.*;
 import java.net.*;
 import java.io.IOException;
+import java.util.*;
 
 public class Server {
 
     public static int DEFAULT_PORT = 6789;
+    public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
 
     public static ServerSocketChannel openServerChannel(int port) {
         ServerSocketChannel serverChannel = null;
@@ -33,6 +35,21 @@ public class Server {
 
     public static void main(String[] args) {
 
+        // get command line arguments
+        if (args.length == 3 && args[1].equals("-config")){
+            // Try to parse configuration file
+            try{
+                ConfigParser cp = new ConfigParser(args[2]);
+                virtualHosts = cp.virtualHosts;
+                if(cp.port != -1)
+                    DEFAULT_PORT = cp.port;
+            }catch(Exception e){
+                System.out.println("Could not load configurations: " + args[2]);
+                e.printStackTrace();
+                return;
+            }
+        }
+
         // get dispatcher/selector
         Dispatcher dispatcher = new Dispatcher();
 
@@ -46,7 +63,7 @@ public class Server {
         ServerSocketChannel sch = openServerChannel(port);
 
         // create server acceptor for Echo Line ReadWrite Handler
-        ISocketReadWriteHandlerFactory echoFactory = new EchoLineReadWriteHandlerFactory();
+        ISocketReadWriteHandlerFactory echoFactory = new ReadWriteHandlerFactory();
         Acceptor acceptor = new Acceptor(echoFactory);
 
         Thread dispatcherThread;

@@ -15,8 +15,8 @@ class WebRequestHandler {
 
     String WWW_ROOT;
     String serverName;
-    List<VirtualHost> virtualHosts;
     Socket connSocket;
+    List<VirtualHost> virtualHosts;
     BufferedReader inFromClient;
     DataOutputStream outToClient;
 
@@ -51,7 +51,7 @@ class WebRequestHandler {
         {
             outputResponseHeader();
             outputResponseBody();
-        } // dod not handle error
+        } // do not handle error
 
         connSocket.close();
     } catch (Exception e) {
