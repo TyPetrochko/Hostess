@@ -3,7 +3,7 @@ import java.net.*;
 import java.io.IOException;
 import java.util.*;
 
-public class Server {
+public class AsyncServer {
 
     public static int DEFAULT_PORT = 6789;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
@@ -36,22 +36,28 @@ public class Server {
     public static void main(String[] args) {
 
         // get command line arguments
-        if (args.length == 3 && args[1].equals("-config")){
+        if (args.length == 2 && args[0].equals("-config")){
             // Try to parse configuration file
             try{
-                ConfigParser cp = new ConfigParser(args[2]);
+                ConfigParser cp = new ConfigParser(args[1]);
                 virtualHosts = cp.virtualHosts;
                 if(cp.port != -1)
                     DEFAULT_PORT = cp.port;
             }catch(Exception e){
-                System.out.println("Could not load configurations: " + args[2]);
+                System.out.println("Could not load configurations: " + args[1]);
                 e.printStackTrace();
                 return;
             }
+        }else{
+            printUsage();
+            return;
         }
 
         // get dispatcher/selector
         Dispatcher dispatcher = new Dispatcher();
+
+        // make a timeout thread as well
+        TimeoutThread timeout = new TimeoutThread(dispatcher);
 
         // open server socket channel
         int port;
@@ -75,6 +81,7 @@ public class Server {
             // start dispatcher
             dispatcherThread = new Thread(dispatcher);
             dispatcherThread.start();
+            timeout.start();
         } catch (IOException ex) {
             System.out.println("Cannot register and start server");
             System.exit(1);
@@ -82,5 +89,9 @@ public class Server {
         // may need to join the dispatcher thread
 
     } // end of main
+
+    public static void printUsage(){
+        System.out.println("Usage: java AsyncServer -config config.conf");
+    }
 
 } // end of class

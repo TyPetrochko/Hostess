@@ -165,7 +165,7 @@ public class ReadWriteHandler implements IReadWriteHandler {
         // Is request done?
         System.out.println("Request: ");
         System.out.println(request.toString());
-        if(request.toString().endsWith("\r\n\r\n")){
+        if(request.toString().endsWith("\r\n\r\n") || line.equals("")){
             requestComplete = true;
         }
 
@@ -180,8 +180,8 @@ public class ReadWriteHandler implements IReadWriteHandler {
     
     private void generateResponse() throws IOException {
         System.out.println("Writing response!");
-        AsyncWebRequestHandler a = new AsyncWebRequestHandler(inBuffer, 
-            outBuffer, Server.virtualHosts);
+        AsyncWebRequestHandler a = new AsyncWebRequestHandler(request, 
+            outBuffer, AsyncServer.virtualHosts);
 
         a.processRequest();
         outBuffer.flip();

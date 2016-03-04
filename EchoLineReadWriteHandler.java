@@ -45,6 +45,8 @@ public class EchoLineReadWriteHandler implements IReadWriteHandler {
         // a connection is ready to be read
         Debug.DEBUG("->handleRead");
 
+        TimeoutThread.removeDeadline(key);
+
         if (requestComplete) { // this call should not happen, ignore
             return;
         }

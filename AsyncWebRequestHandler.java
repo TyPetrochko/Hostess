@@ -14,6 +14,7 @@ import java.io.IOException;
 class AsyncWebRequestHandler {
 
     static boolean _DEBUG = true;
+    static boolean doneProcessing = false;
     static int     reqCount = 0;
 
     String WWW_ROOT;
@@ -26,12 +27,14 @@ class AsyncWebRequestHandler {
     File fileInfo;
 
     ByteBuffer outBuff;
-    ByteBuffer inBuff;
+    StringBuffer inBuff;
 
     BufferedReader reader;
     StringBuilder writer;
 
-    public AsyncWebRequestHandler(ByteBuffer inBuff, ByteBuffer outBuff,
+    FileInputStream fileStream;
+
+    public AsyncWebRequestHandler(StringBuffer inBuff, ByteBuffer outBuff,
                  List<VirtualHost> virtualHosts) throws IOException
     {
         reqCount ++;
@@ -43,7 +46,7 @@ class AsyncWebRequestHandler {
 
 
 
-        reader = new BufferedReader(new StringReader(new String(inBuff.array(), "US-ASCII")));
+        reader = new BufferedReader(new StringReader(inBuff.toString()));
         writer = new StringBuilder();
 
     }
@@ -63,16 +66,35 @@ class AsyncWebRequestHandler {
 
         } catch (Exception e) {
             outputError(400, "Server error");
+            e.printStackTrace();
         }
 
         try{
             outBuff.put(writer.toString().getBytes("US-ASCII"));
-            System.out.println("WROTE TO BUFFER: " + writer.toString());
         }catch(Exception e){
             e.printStackTrace();
         }
-
     } // end of processRequest
+
+    /*
+    public boolean continueProcessing(){
+
+        try{
+            // send file content
+            byte [] batch = new byte[outBuff.remaining()];
+            int isComplete = fileStream.read(batch);
+            outBuff.put(batch);
+            if(isComplete == -1){
+                doneProcessing = true;
+            }else{
+                doneProcessing = false;
+            }
+        }catch (Exception e) {
+            System.out.println("Error continuing to send large file");
+            e.printStackTrace();
+        }
+    }
+    */
 
     private void mapURL2File() throws IOException 
     {
@@ -91,7 +113,7 @@ class AsyncWebRequestHandler {
         
         if (request.length < 2 || !request[0].equals("GET"))
         {
-            outputError(500, "Bad request");
+            outputError(500, "Bad request: "+ requestMessageLine);
             return;
         }
 
@@ -175,25 +197,43 @@ class AsyncWebRequestHandler {
             writer.append("Content-Type: text/html\r\n");
         else
             writer.append("Content-Type: text/plain\r\n");
+
+        flushWriter();
     }
 
     private void outputResponseBody() throws IOException 
     {
 
-        int numOfBytes = (int) fileInfo.length();
-        writer.append("Content-Length: " + numOfBytes + "\r\n");
+        int fileSize = (int) fileInfo.length();
+        writer.append("Content-Length: " + fileSize + "\r\n");
         writer.append("\r\n");
 
+        flushWriter();
     
         // send file content
-        FileInputStream fileStream  = new FileInputStream (fileName);
+        fileStream  = new FileInputStream (fileName);
     
-        byte[] fileInBytes = new byte[numOfBytes];
-        fileStream.read(fileInBytes);
+        if(fileSize > outBuff.remaining()){
+            byte [] batch = new byte[outBuff.remaining()];
+            fileStream.read(batch);
+            outBuff.put(batch);
+            doneProcessing = false;
+        }else{
+            byte[] fileInBytes = new byte[fileSize];
+            fileStream.read(fileInBytes);
+            outBuff.put(fileInBytes);
+            doneProcessing = true;
+        }
+    }
 
-
-        outBuff.put(fileInBytes);
-    
+    void flushWriter(){
+        try{
+            outBuff.put(writer.toString().getBytes("US-ASCII"));
+            writer = new StringBuilder();
+        }catch (Exception e) {
+            System.out.println("Error flushing StringBuilder to buffer");
+            e.printStackTrace();
+        }
     }
 
     void outputError(int errCode, String errMsg)
