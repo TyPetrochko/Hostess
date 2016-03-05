@@ -11,7 +11,6 @@ public class AsyncServer {
     public static ServerSocketChannel openServerChannel(int port) {
         ServerSocketChannel serverChannel = null;
         try {
-
             // open server socket for accept
             serverChannel = ServerSocketChannel.open();
 
@@ -34,7 +33,6 @@ public class AsyncServer {
     } // end of open serverChannel
 
     public static void main(String[] args) {
-
         // get command line arguments
         if (args.length == 2 && args[0].equals("-config")){
             // Try to parse configuration file

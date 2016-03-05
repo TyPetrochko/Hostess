@@ -85,7 +85,6 @@ public class ReadWriteHandler implements IReadWriteHandler {
         }
 
         if (responseReady) {
-
             if (!responseSent) {
                 nextState = nextState | SelectionKey.OP_WRITE;
                 Debug.DEBUG("New state: +Write since response ready but not done sent");
@@ -113,11 +112,15 @@ public class ReadWriteHandler implements IReadWriteHandler {
             responseSent = true;
             client.shutdownInput();
             client.close();
+            key.cancel();
+            TimeoutThread.removeDeadline(key);
             Debug.DEBUG("handleWrite: responseSent");
+        }else{
+            // update state
+            updateState(key);    
         }
 
-        // update state
-        updateState(key);
+        
 
         // try {Thread.sleep(5000);} catch (InterruptedException e) {}
         Debug.DEBUG("handleWrite->");
@@ -163,8 +166,8 @@ public class ReadWriteHandler implements IReadWriteHandler {
         request.append(line);
 
         // Is request done?
-        System.out.println("Request: ");
-        System.out.println(request.toString());
+        Debug.debug("Request: ");
+        Debug.debug(request.toString());
         if(request.toString().endsWith("\r\n\r\n") || line.equals("")){
             requestComplete = true;
         }
@@ -177,9 +180,8 @@ public class ReadWriteHandler implements IReadWriteHandler {
 
     } // end of process input
 
-    
+    // handle a web-request
     private void generateResponse() throws IOException {
-        System.out.println("Writing response!");
         AsyncWebRequestHandler a = new AsyncWebRequestHandler(request, 
             outBuffer, AsyncServer.virtualHosts);
 

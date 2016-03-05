@@ -42,7 +42,8 @@ class SHTTPTestClient{
 		System.out.println("Total number of files downloaded: " + Tester.totalFilesDownloaded.get());
 		System.out.println("Total number of files downloaded/sec: " + (Tester.totalFilesDownloaded.get() / (testingTime)));
 		System.out.println("Average wait time/download (ms): " + (Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
-		System.out.println("Average bytes downloaded/sec: " + (Tester.totalBytesDownloaded.get() / (testingTime)));
+		float mbps = (float)(Tester.totalBytesDownloaded.get() / (testingTime * 1000000));
+		System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
 	} // end main
 
 	public static void printUsage(){

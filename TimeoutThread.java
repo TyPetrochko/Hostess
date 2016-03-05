@@ -1,68 +1,61 @@
 import java.nio.channels.*;
 import java.io.IOException;
 import java.util.*; // for Set and Iterator
+import java.util.concurrent.*;
 
 public class TimeoutThread extends Thread {
-	static List <Deadline> deadlines;
+	static ConcurrentHashMap <SelectionKey, Long> deadlines;
 	private Dispatcher dispatcher;
 
 	public TimeoutThread(Dispatcher d){
 		this.dispatcher = d;
-		deadlines = new ArrayList<Deadline>();
+		deadlines = new ConcurrentHashMap<SelectionKey, Long>();
 	}
 
 	public void run (){
 		System.out.println("Timeout thread is running");
+
+		// remove unwanted connections every ~200ms
 		while(true){
+			try{
+				Thread.sleep(200);
+			} catch (Exception e){
+				System.out.println("Couldn't fall asleep");
+				e.printStackTrace();
+			}
+
+			// remove any deadlines that occured before "rightNow"
 			long rightNow = System.currentTimeMillis();
-			for(Deadline d : deadlines){
-				if (d.deadline < rightNow){
-					// timed out!
+			for(Map.Entry<SelectionKey, Long> pair : deadlines.entrySet()){
+				Long when = (Long) pair.getValue();
+				SelectionKey key = (SelectionKey) pair.getKey();
+
+				// must deregister key, cancel channel
+				if(when.longValue() < rightNow){
+					System.out.println(key + " timed out!");
+					deadlines.remove(key);
+					key.cancel();
 					try{
-						d.sk.channel().close();
-						d.sk.cancel();
-					}catch(Exception e){
+						key.channel().close();
+					}catch (Exception e){
+						System.out.println("Couldn't disconnect client");
 						e.printStackTrace();
 					}
 				}
 			}
+
 		}
 	}
 
+	// add a deadline to be monitored
 	static void addDeadline(SelectionKey s, long when){
-		System.out.println(s + " has until " + when + " to respond!");
-		try{
-			synchronized(deadlines){
-				deadlines.add(new Deadline(s, when));
-			}
-		}catch (Exception e){
-			System.out.println("Syncing error");
-			e.printStackTrace();
-		}
+		Debug.debug(s.toString() + " has until " + when + " to respond!");
+		deadlines.put(s, new Long(when));
 	}
 
+	// remove a deadline (he responded)
 	static void removeDeadline(SelectionKey s){
-		try{
-			synchronized(deadlines){
-				for (Deadline d : deadlines){
-					if (d.sk == s){
-						deadlines.remove(d);
-					}
-				}
-			}
-		}catch (Exception e){
-			System.out.println("Syncing error");
-			e.printStackTrace();
-		}
-	}
-}
-
-class Deadline {
-	public SelectionKey sk;
-	public long deadline;
-
-	public Deadline(SelectionKey sk, long deadline){
-		this.sk = sk;
-		this.deadline = deadline;
+		Debug.debug(s.toString() + " has responded; remove from timeout pool");
+		deadlines.remove(s);
 	}
 }

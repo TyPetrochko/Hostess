@@ -23,7 +23,7 @@ test-suspension: server
 	java WebServer suspension -config data/config.conf
 
 test-client: client
-	java SHTTPTestClient -server localhost -servname test -port 6789 -parallel 100 -files data/filelist -T 5
+	java SHTTPTestClient -server localhost -servname test -port 6789 -parallel 100 -files data/filelist -T 10
 
 test-async: async
 	java AsyncServer -config data/config.conf
