@@ -43,11 +43,13 @@ class WebRequestHandler {
 
         this.connSocket = connectionSocket;
 
-        inFromClient =
-          new BufferedReader(new InputStreamReader(connSocket.getInputStream()));
+        if(connectionSocket != null){
+            inFromClient =
+              new BufferedReader(new InputStreamReader(connSocket.getInputStream()));
 
-        outToClient =
-          new DataOutputStream(connSocket.getOutputStream());
+            outToClient =
+              new DataOutputStream(connSocket.getOutputStream());
+      }
 
     }
 
@@ -95,7 +97,7 @@ class WebRequestHandler {
 
     } // end of processARequest
 
-    private void mapURL2File() throws Exception 
+    public void mapURL2File() throws Exception 
     {
         // Configure default host
         if(!virtualHosts.isEmpty()){
@@ -144,7 +146,7 @@ class WebRequestHandler {
         // Parse all headers, line by line
         String line = inFromClient.readLine();
         ifModifiedSince = null;
-        while ( !line.equals("") ) {
+        while (line != null && !line.equals("") ) {
             
             // separate line by first space
             String[] tokens = line.split("\\s");

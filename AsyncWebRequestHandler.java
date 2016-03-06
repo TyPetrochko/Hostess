@@ -10,43 +10,28 @@ import java.text.SimpleDateFormat;
 import java.nio.*;
 import java.nio.channels.*;
 import java.io.IOException;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 
-class AsyncWebRequestHandler {
-
-    static boolean _DEBUG = true;
-    static boolean doneProcessing = false;
-    static int     reqCount = 0;
-
-    String WWW_ROOT;
-    String serverName;
-    List<VirtualHost> virtualHosts;
-    SocketChannel connSocket;
-
-    String urlName;
-    String fileName;
-    File fileInfo;
+class AsyncWebRequestHandler extends WebRequestHandler {
 
     ByteBuffer outBuff;
     StringBuffer inBuff;
 
-    BufferedReader reader;
     StringBuilder writer;
-
     FileInputStream fileStream;
 
-    public AsyncWebRequestHandler(StringBuffer inBuff, ByteBuffer outBuff,
-                 List<VirtualHost> virtualHosts) throws IOException
-    {
-        reqCount ++;
+    boolean doneProcessing;
 
-        this.virtualHosts = virtualHosts;
+    public AsyncWebRequestHandler(StringBuffer inBuff, ByteBuffer outBuff,
+                 List<VirtualHost> virtualHosts) throws Exception
+    {
+        super(null, virtualHosts);
 
         this.inBuff = inBuff;
         this.outBuff = outBuff;
 
-
-
-        reader = new BufferedReader(new StringReader(inBuff.toString()));
+        inFromClient = new BufferedReader(new StringReader(inBuff.toString()));
         writer = new StringBuilder();
 
     }
@@ -59,10 +44,10 @@ class AsyncWebRequestHandler {
 
             if ( fileInfo != null ) // found the file and knows its info
             {
+                System.out.println("Printing response");
                 outputResponseHeader();
                 outputResponseBody();
             } // do not handle error
-
 
         } catch (Exception e) {
             outputError(400, "Server error");
@@ -96,7 +81,7 @@ class AsyncWebRequestHandler {
         }
     }
     */
-
+    /*
     private void mapURL2File() throws IOException 
     {
         // Configure default host
@@ -159,6 +144,7 @@ class AsyncWebRequestHandler {
         }
 
     } // end mapURL2file
+    */
 
 
     private void outputResponseHeader() throws IOException 

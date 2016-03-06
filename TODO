@@ -1,10 +1,8 @@
-1) Implement User-Agent field for non-async servers
-2) Test recent WebRequestHandler changes in servers 2-5
-3) Build Java 7 Async Web-Server
-3.5) Clean up Java 7 Async Web-Server
 4) Update Async web-request handler to reflect changes in non-async version
 5) Make Async Servers capable of handling large files
-6) Debug like a madman. See below.
+6) Implement load-balancing
+7) Implement full CGI Environment variables
+7) Debug like a madman. See below.
 
 housekeeping stuff:
 - clean up code, remove comments
