@@ -153,8 +153,13 @@ class Tester implements Runnable{
 					numWaits ++;
 
 					// Was the request ok?
-					if(!response.split(" ")[1].equals("200")){
+					if(response == null){
 						return;
+					}else{
+						String[]tkz = response.split(" ");
+						if(tkz.length < 2 || !tkz[1].equals("200")){
+							return;
+						}
 					}
 
 					// Find content length and download file

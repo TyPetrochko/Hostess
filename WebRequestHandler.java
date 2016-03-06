@@ -7,6 +7,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
 
 class WebRequestHandler {
 
@@ -14,6 +17,7 @@ class WebRequestHandler {
     static int     reqCount = 0;
 
     String WWW_ROOT;
+    String QUERY_STRING;
     String serverName;
     Socket connSocket;
     List<VirtualHost> virtualHosts;
@@ -23,6 +27,10 @@ class WebRequestHandler {
     String urlName;
     String fileName;
     File fileInfo;
+
+    ZonedDateTime ifModifiedSince;
+    ZonedDateTime lastModifiedZdt;
+
 
     public WebRequestHandler(Socket connectionSocket, 
                  List<VirtualHost> virtualHosts) throws Exception
@@ -47,15 +55,39 @@ class WebRequestHandler {
     try {
         mapURL2File();
 
+
+
         if ( fileInfo != null ) // found the file and knows its info
         {
-            outputResponseHeader();
-            outputResponseBody();
+            // find out when file last modified
+            long lastModified = fileInfo.lastModified();
+            Instant instant = Instant.ofEpochMilli(lastModified);
+            lastModifiedZdt = ZonedDateTime.ofInstant(instant , 
+                ZoneId.of("GMT"));
+
+            System.out.println("Comparing " + ifModifiedSince + " vs " + lastModifiedZdt);
+            // if checking "if-modified-since", we may want to just notify
+            if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
+                outputNotModified();
+                return;
+            }else{
+                outputResponseHeader();
+                outputResponseBody();
+            }
         } // do not handle error
 
-        connSocket.close();
+        
     } catch (Exception e) {
+        System.out.println("Encountered error, sending report and closing socket");
+        e.printStackTrace();
         outputError(400, "Server error");
+    } finally {
+        try{
+            connSocket.close();
+        }catch (Exception e){
+            System.out.println("Couldn't close socket");
+            e.printStackTrace();
+        }
     }
 
 
@@ -72,7 +104,14 @@ class WebRequestHandler {
         }
 
         String requestMessageLine = inFromClient.readLine();
+        if(requestMessageLine == null){
+            return; // ignore null requests
+        }
         DEBUG("Request " + reqCount + ": " + requestMessageLine);
+
+        if(requestMessageLine == null){
+            throw new Exception();
+        }
 
         // process the request
         String[] request = requestMessageLine.split("\\s");
@@ -89,22 +128,52 @@ class WebRequestHandler {
         if ( urlName.startsWith("/") == true )
            urlName  = urlName.substring(1);
 
+       // question mark means there's a query string
+        if(urlName.contains("?")){
+            System.out.println("Detected question mark");
+            String[]tokens = urlName.split("\\?");
+            urlName = tokens[0];
+            StringBuilder queryStringBuilder = new StringBuilder();
+            for(int i = 1 ; i < tokens.length; i++){
+                queryStringBuilder.append(tokens[i]);
+            }
+            QUERY_STRING = queryStringBuilder.toString();
+        }
+
+        // Read through all headers
         // Did the request specify a host? 
         String line = inFromClient.readLine();
+        ifModifiedSince = null;
         while ( !line.equals("") ) {
-          String[] tokens = line.split("\\s");
-          if(tokens.length >= 2 && tokens[0].equals("Host:")){
-            
+            String[] tokens = line.split("\\s");
+            if(tokens.length >= 2 && tokens[0].equals("Host:")){
             // User specified a host
-            for(VirtualHost v : virtualHosts){
-                if(v.serverName.equals(tokens[1])){
-                    WWW_ROOT = v.documentRoot;
-                    serverName = v.serverName;
+                for(VirtualHost v : virtualHosts){
+                    if(v.serverName.equals(tokens[1])){
+                        WWW_ROOT = v.documentRoot;
+                        serverName = v.serverName;
+                    }
+                }
+            }else if (tokens.length >= 2 && tokens[0].equals("If-Modified-Since:")){
+                // parse the time we're looking for
+                StringBuilder sb = new StringBuilder();
+                for(int i = 1; i < tokens.length; i++){
+                    sb.append(tokens[i]);
+                    if(i + 1 != tokens.length)
+                        sb.append(" ");
+                }
+                String time = sb.toString();
+
+                try{
+                    ifModifiedSince = LocalDateTime.parse(time, 
+                        DateTimeFormatter.RFC_1123_DATE_TIME).atZone(ZoneId.of("GMT"));
+                }catch(Exception e){
+                    ifModifiedSince = null; // couldn't parse it
+                    System.out.println("Couldn't parse datetime: " + time);
                 }
             }
-          }
-          line = inFromClient.readLine();
-        }
+            line = inFromClient.readLine();
+            }
 
         // System.out.print();ut optional slash at end
         if(!WWW_ROOT.substring(WWW_ROOT.length() - 1).equals("/")){
@@ -129,12 +198,15 @@ class WebRequestHandler {
     private void outputResponseHeader() throws Exception 
     {
         outToClient.writeBytes("HTTP/1.0 200 Document Follows\r\n");
-        outToClient.writeBytes("Date: " 
-            + new SimpleDateFormat("EEEE, dd MMM HH:mm:ss z").format(new Date()) + "\r\n");
+        outToClient.writeBytes("Date: " + DateTimeFormatter.RFC_1123_DATE_TIME
+            .format(ZonedDateTime.now(ZoneId.of("GMT"))) + "\r\n");
 
         if(serverName != null){
             outToClient.writeBytes("Server: " + serverName + "\r\n");
         }
+
+        outToClient.writeBytes("Last-Modified: " + DateTimeFormatter
+            .RFC_1123_DATE_TIME.format(lastModifiedZdt) + "\r\n");
 
         if (urlName.endsWith(".jpg"))
             outToClient.writeBytes("Content-Type: image/jpeg\r\n");
@@ -148,18 +220,52 @@ class WebRequestHandler {
 
     private void outputResponseBody() throws Exception 
     {
+        if(fileInfo.canExecute()){
+            runCGI();
+            return;
+        }
 
         int numOfBytes = (int) fileInfo.length();
         outToClient.writeBytes("Content-Length: " + numOfBytes + "\r\n");
         outToClient.writeBytes("\r\n");
-    
-        // send file content
-        FileInputStream fileStream  = new FileInputStream (fileName);
-    
-        byte[] fileInBytes = new byte[numOfBytes];
-        fileStream.read(fileInBytes);
+
+
+        // look in cache, else read from file
+        byte[] fileInBytes;
+        if(WebServer.cache.hasFile(fileName) && WebServer.cache
+            .cachedTimeMillis(fileName) > fileInfo.lastModified()){
+            fileInBytes = WebServer.cache.getFile(fileName);
+        }
+        else { // cache miss
+            // read in file
+            FileInputStream fileStream  = new FileInputStream (fileName);
+            fileInBytes = new byte[numOfBytes];
+            fileStream.read(fileInBytes);
+
+            // cache result
+            WebServer.cache.cacheIfPossible(fileName, fileInBytes);
+        }
 
         outToClient.write(fileInBytes, 0, numOfBytes);
+    }
+
+    private void runCGI() throws Exception{
+
+        // build process and set query string in environment variable
+        ProcessBuilder pb = new ProcessBuilder(fileName);
+        Map<String, String> env = pb.environment();
+        if(QUERY_STRING != null){
+            env.put("QUERY_STRING", QUERY_STRING);
+        }
+
+        // funnel into the pipe 1024 bytes at a time
+        InputStream procOut = pb.start().getInputStream();
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = procOut.read(buffer)) != -1)
+        {
+            outToClient.write(buffer, 0, bytesRead);
+        }
     }
 
     void outputError(int errCode, String errMsg)
@@ -168,6 +274,13 @@ class WebRequestHandler {
             outToClient.writeBytes("HTTP/1.0 " + errCode + " " + errMsg + "\r\n");
         } catch (Exception e) {}
     }
+
+    void outputNotModified()
+    {
+        try {
+            outToClient.writeBytes("HTTP/1.0 304 Not Modified\r\n");
+        } catch (Exception e) {}
+    }    
 
     static void DEBUG(String s) 
     {

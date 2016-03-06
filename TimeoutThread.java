@@ -49,13 +49,13 @@ public class TimeoutThread extends Thread {
 
 	// add a deadline to be monitored
 	static void addDeadline(SelectionKey s, long when){
-		Debug.debug(s.toString() + " has until " + when + " to respond!");
+		Debug.DEBUG(s.toString() + " has until " + when + " to respond!");
 		deadlines.put(s, new Long(when));
 	}
 
 	// remove a deadline (he responded)
 	static void removeDeadline(SelectionKey s){
-		Debug.debug(s.toString() + " has responded; remove from timeout pool");
+		Debug.DEBUG(s.toString() + " has responded; remove from timeout pool");
 		deadlines.remove(s);
 	}
 }

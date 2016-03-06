@@ -6,6 +6,7 @@ import java.util.*;
 public class AsyncServer {
 
     public static int DEFAULT_PORT = 6789;
+    public static long INCOMPLETE_TIMEOUT = 3000;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
 
     public static ServerSocketChannel openServerChannel(int port) {
@@ -41,6 +42,10 @@ public class AsyncServer {
                 virtualHosts = cp.virtualHosts;
                 if(cp.port != -1)
                     DEFAULT_PORT = cp.port;
+                if(cp.incompleteTimeout != -1.0f){
+                    INCOMPLETE_TIMEOUT = (long) (cp.incompleteTimeout * 1000);
+                    System.out.println("Timeout specified: " + INCOMPLETE_TIMEOUT);
+                }
             }catch(Exception e){
                 System.out.println("Could not load configurations: " + args[1]);
                 e.printStackTrace();
@@ -55,7 +60,8 @@ public class AsyncServer {
         Dispatcher dispatcher = new Dispatcher();
 
         // make a timeout thread as well
-        TimeoutThread timeout = new TimeoutThread(dispatcher);
+        //TimeoutThread timeout = new TimeoutThread(dispatcher);
+        Timeout t = new Timeout(INCOMPLETE_TIMEOUT);
 
         // open server socket channel
         int port;
@@ -79,7 +85,7 @@ public class AsyncServer {
             // start dispatcher
             dispatcherThread = new Thread(dispatcher);
             dispatcherThread.start();
-            timeout.start();
+            //timeout.start();
         } catch (IOException ex) {
             System.out.println("Cannot register and start server");
             System.exit(1);

@@ -12,6 +12,7 @@ class ConfigParser{
     public int port = -1;
     public int threadPoolSize = -1;
     public int cacheSize = -1;
+    public float incompleteTimeout = -1.0f;
     public List<VirtualHost> virtualHosts;
 
     public ConfigParser(String configFile) throws Exception {
@@ -31,6 +32,8 @@ class ConfigParser{
 	        		threadPoolSize = Integer.parseInt(words[1]);
 	        	}else if (words[0].equalsIgnoreCase("CacheSize")){
 	        		cacheSize = Integer.parseInt(words[1]);
+	        	}else if (words[0].equalsIgnoreCase("IncompleteTimeout")) {
+	        		incompleteTimeout = Float.parseFloat(words[1]);
 	        	}else if(line.contains("VirtualHost")){
 	        		VirtualHost v = new VirtualHost();
 

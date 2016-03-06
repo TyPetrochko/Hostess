@@ -35,7 +35,8 @@ public class Acceptor implements IAcceptHandler {
         SelectionKey clientKey = client.register(key.selector(), ops);
         clientKey.attach(rwH);
 
-        TimeoutThread.addDeadline(clientKey, System.currentTimeMillis() + 3000);
+        //TimeoutThread.addDeadline(clientKey, System.currentTimeMillis() + 3000);
+        Timeout.addDeadline(clientKey, AsyncServer.INCOMPLETE_TIMEOUT);
     
     } // end of handleAccept
 

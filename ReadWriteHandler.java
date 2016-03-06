@@ -113,7 +113,7 @@ public class ReadWriteHandler implements IReadWriteHandler {
             client.shutdownInput();
             client.close();
             key.cancel();
-            TimeoutThread.removeDeadline(key);
+            //TimeoutThread.removeDeadline(key);
             Debug.DEBUG("handleWrite: responseSent");
         }else{
             // update state
@@ -166,8 +166,8 @@ public class ReadWriteHandler implements IReadWriteHandler {
         request.append(line);
 
         // Is request done?
-        Debug.debug("Request: ");
-        Debug.debug(request.toString());
+        Debug.DEBUG("Request: ");
+        Debug.DEBUG(request.toString());
         if(request.toString().endsWith("\r\n\r\n") || line.equals("")){
             requestComplete = true;
         }

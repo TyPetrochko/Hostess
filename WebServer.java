@@ -13,8 +13,10 @@ class WebServer{
     public static int serverPort = 6789;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
     public static ServerSocket listenSocket = null;
+    public static FileCache cache = null;
     public static String WWW_ROOT = "./";
     public static int threadPoolSize = 1;
+    public static int cacheSize = 0;
 
     public static void main(String args[]) throws Exception  {
 
@@ -27,6 +29,8 @@ class WebServer{
 					serverPort = cp.port;
 				if(cp.threadPoolSize != -1)
 					threadPoolSize = cp.threadPoolSize;
+				if(cp.cacheSize != -1)
+					cacheSize = cp.cacheSize;
 			}catch(Exception e){
 				System.out.println("Could not load configurations: " + args[2]);
 				e.printStackTrace();
@@ -35,23 +39,23 @@ class WebServer{
 			String serverType = args[0].toLowerCase();
 			switch(serverType){
 				case "sequential":
-					initSocket();
+					init();
 					sequential();
 					break;
 				case "per-request-thread":
-					initSocket();
+					init();
 					perRequestThread();
 					break;
 				case "competing":
-					initSocket();
+					init();
 					competing();
 					break;
 				case "busywait":
-					initSocket();
+					init();
 					busyWait();
 					break;
 				case "suspension":
-					initSocket();
+					init();
 					suspension();
 					break;
 				default:
@@ -65,9 +69,13 @@ class WebServer{
 		} // end if
     } // end of main
 
-    public static void initSocket() throws IOException{
+    public static void init() throws IOException{
     	// create server socket
 		listenSocket = new ServerSocket(serverPort);
+
+		// create cache
+		cache = new FileCache(cacheSize);
+
 
 		// list all listening hosts
 		System.out.println("server listening at: " + listenSocket);
