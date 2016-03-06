@@ -44,9 +44,20 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
             if ( fileInfo != null ) // found the file and knows its info
             {
-                System.out.println("Printing response");
-                outputResponseHeader();
-                outputResponseBody();
+                // find out when file last modified
+                long lastModified = fileInfo.lastModified();
+                Instant instant = Instant.ofEpochMilli(lastModified);
+                lastModifiedZdt = ZonedDateTime.ofInstant(instant , 
+                    ZoneId.of("GMT"));
+
+                // if checking "if-modified-since", we may want to just notify
+                if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
+                    outputNotModified();
+                    return;
+                }else{
+                    outputResponseHeader();
+                    outputResponseBody();
+                }
             } // do not handle error
 
         } catch (Exception e) {
@@ -54,12 +65,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             e.printStackTrace();
         }
 
-        try{
-            outBuff.put(writer.toString().getBytes("US-ASCII"));
-        }catch(Exception e){
-            System.out.println("Couldn't write to out buffer: " + writer.toString());
-            e.printStackTrace();
-        }
+        flushWriter();
     } // end of processRequest
 
     /*
@@ -82,7 +88,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     }
     */
     /*
-    private void mapURL2File() throws IOException 
+    public void mapURL2File() throws IOException 
     {
         // Configure default host
         if(!virtualHosts.isEmpty()){
@@ -91,7 +97,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             throw new IOException();
         }
 
-        String requestMessageLine = reader.readLine();
+        String requestMessageLine = inFromClient.readLine();
         DEBUG("Request " + reqCount + ": " + requestMessageLine);
 
         // process the request
@@ -110,7 +116,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
            urlName  = urlName.substring(1);
 
         // Did the request specify a host? 
-        String line = reader.readLine();
+        String line = inFromClient.readLine();
         while (line != null && !line.equals("") ) {
           String[] tokens = line.split("\\s");
           if(tokens.length >= 2 && tokens[0].equals("Host:")){
@@ -123,7 +129,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 }
             }
           }
-          line = reader.readLine();
+          line = inFromClient.readLine();
         }
 
         // System.out.print();ut optional slash at end
@@ -145,6 +151,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
     } // end mapURL2file
     */
+    
 
 
     private void outputResponseHeader() throws IOException 
@@ -175,6 +182,9 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         if(serverName != null){
             writer.append("Server: " + serverName + "\r\n");
         }
+
+        writer.append("Last-Modified: " + DateTimeFormatter
+            .RFC_1123_DATE_TIME.format(lastModifiedZdt) + "\r\n");
 
         if (urlName.endsWith(".jpg"))
             writer.append("Content-Type: image/jpeg\r\n");
@@ -213,6 +223,27 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         }
     }
 
+    private void runCGI() throws Exception{
+
+        // build process and set query string in environment variable
+        ProcessBuilder pb = new ProcessBuilder(fileName);
+        Map<String, String> env = pb.environment();
+        if(QUERY_STRING != null){
+            env.put("QUERY_STRING", QUERY_STRING);
+        }
+
+        flushWriter();
+
+        // funnel into the pipe 1024 bytes at a time
+        InputStream procOut = pb.start().getInputStream();
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = procOut.read(buffer)) != -1)
+        {
+            outBuff.put(buffer);
+        }
+    }
+
     void flushWriter(){
         try{
             outBuff.put(writer.toString().getBytes("US-ASCII"));
@@ -228,6 +259,13 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         try {
             writer.append("HTTP/1.0 " + errCode + " " + errMsg + "\r\n");
             System.out.println("Could not write to file!");
+        } catch (Exception e) {}
+    }
+
+    void outputNotModified()
+    {
+        try {
+            writer.append("HTTP/1.0 304 Not Modified\r\n");
         } catch (Exception e) {}
     }
 

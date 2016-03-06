@@ -59,8 +59,6 @@ class WebRequestHandler {
     try {
         mapURL2File();
 
-
-
         if ( fileInfo != null ) // found the file and knows its info
         {
             // find out when file last modified
@@ -186,7 +184,8 @@ class WebRequestHandler {
                 }
             }
             line = inFromClient.readLine(); // get next line
-            }
+        }
+
 
         if(!WWW_ROOT.substring(WWW_ROOT.length() - 1).equals("/")){
             WWW_ROOT = WWW_ROOT + "/";
@@ -213,8 +212,6 @@ class WebRequestHandler {
             outputError(404,  "Not Found");
             fileInfo = null;
         }
-
-        DEBUG("Map to File name: " + fileName);
 
     } // end mapURL2file
 
