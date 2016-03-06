@@ -63,16 +63,10 @@ public class AsyncServer {
         //TimeoutThread timeout = new TimeoutThread(dispatcher);
         Timeout t = new Timeout(INCOMPLETE_TIMEOUT);
 
-        // open server socket channel
-        int port;
-        try {
-            port = Integer.parseInt(args[0]);
-        } catch (Exception ex) {
-            port = DEFAULT_PORT;
-        }
-        ServerSocketChannel sch = openServerChannel(port);
+        // open server channel
+        ServerSocketChannel sch = openServerChannel(DEFAULT_PORT);
 
-        // create server acceptor for Echo Line ReadWrite Handler
+        // (recycled code from EchoServer.java)
         ISocketReadWriteHandlerFactory echoFactory = new ReadWriteHandlerFactory();
         Acceptor acceptor = new Acceptor(echoFactory);
 

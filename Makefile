@@ -1,3 +1,5 @@
+java7: Java7AsyncServer.java AsyncWebRequestHandler.java ConfigParser.java VirtualHost.java
+	javac $^
 async: AsyncServer.java Acceptor.java AsyncWebRequestHandler.java ConfigParser.java Debug.java Dispatcher.java IAcceptHandler.java IChannelHandler.java IReadWriteHandler.java ISocketReadWriteHandlerFactory.java ReadWriteHandler.java ReadWriteHandlerFactory.java TimeoutThread.java Timeout.java
 	javac $^
 
@@ -28,6 +30,7 @@ test-client: client
 test-async: async
 	java AsyncServer -config data/config.conf
 
-
+test-java7: java7
+	java Java7AsyncServer -config data/config.conf
 clean:
 	rm *.class

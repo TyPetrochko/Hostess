@@ -72,6 +72,7 @@ class AsyncWebRequestHandler {
         try{
             outBuff.put(writer.toString().getBytes("US-ASCII"));
         }catch(Exception e){
+            System.out.println("Couldn't write to out buffer: " + writer.toString());
             e.printStackTrace();
         }
     } // end of processRequest
@@ -125,7 +126,7 @@ class AsyncWebRequestHandler {
 
         // Did the request specify a host? 
         String line = reader.readLine();
-        while ( !line.equals("") ) {
+        while (line != null && !line.equals("") ) {
           String[] tokens = line.split("\\s");
           if(tokens.length >= 2 && tokens[0].equals("Host:")){
             

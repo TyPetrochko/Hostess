@@ -31,6 +31,8 @@ class WebRequestHandler {
     ZonedDateTime ifModifiedSince;
     ZonedDateTime lastModifiedZdt;
 
+    boolean usingMobile;
+
 
     public WebRequestHandler(Socket connectionSocket, 
                  List<VirtualHost> virtualHosts) throws Exception
@@ -65,7 +67,6 @@ class WebRequestHandler {
             lastModifiedZdt = ZonedDateTime.ofInstant(instant , 
                 ZoneId.of("GMT"));
 
-            System.out.println("Comparing " + ifModifiedSince + " vs " + lastModifiedZdt);
             // if checking "if-modified-since", we may want to just notify
             if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
                 outputNotModified();
@@ -126,7 +127,7 @@ class WebRequestHandler {
         urlName = request[1];
         
         if ( urlName.startsWith("/") == true )
-           urlName  = urlName.substring(1);
+            urlName  = urlName.substring(1);
 
        // question mark means there's a query string
         if(urlName.contains("?")){
@@ -140,57 +141,78 @@ class WebRequestHandler {
             QUERY_STRING = queryStringBuilder.toString();
         }
 
-        // Read through all headers
-        // Did the request specify a host? 
+        // Parse all headers, line by line
         String line = inFromClient.readLine();
         ifModifiedSince = null;
         while ( !line.equals("") ) {
+            
+            // separate line by first space
             String[] tokens = line.split("\\s");
-            if(tokens.length >= 2 && tokens[0].equals("Host:")){
-            // User specified a host
-                for(VirtualHost v : virtualHosts){
-                    if(v.serverName.equals(tokens[1])){
-                        WWW_ROOT = v.documentRoot;
-                        serverName = v.serverName;
-                    }
-                }
-            }else if (tokens.length >= 2 && tokens[0].equals("If-Modified-Since:")){
-                // parse the time we're looking for
-                StringBuilder sb = new StringBuilder();
-                for(int i = 1; i < tokens.length; i++){
-                    sb.append(tokens[i]);
-                    if(i + 1 != tokens.length)
-                        sb.append(" ");
-                }
-                String time = sb.toString();
+            StringBuilder sb = new StringBuilder();
+            for(int i = 1; i < tokens.length; i++){
+                sb.append(tokens[i]);
+                if(i + 1 != tokens.length)
+                    sb.append(" ");
+            }
+            String remaining = sb.toString();
 
+            // switch based off first param
+            if(tokens.length >= 2 && tokens[0].equals("Host:")){
+
+            // User specified a host
+            for(VirtualHost v : virtualHosts){
+                if(v.serverName.equals(tokens[1])){
+                    WWW_ROOT = v.documentRoot;
+                    serverName = v.serverName;
+                }
+            }
+            }else if (tokens.length >= 2 && tokens[0].equals("If-Modified-Since:")){
+                
+                // try to parse if-modified-since date
                 try{
-                    ifModifiedSince = LocalDateTime.parse(time, 
+                    ifModifiedSince = LocalDateTime.parse(remaining, 
                         DateTimeFormatter.RFC_1123_DATE_TIME).atZone(ZoneId.of("GMT"));
                 }catch(Exception e){
                     ifModifiedSince = null; // couldn't parse it
-                    System.out.println("Couldn't parse datetime: " + time);
+                    System.out.println("Couldn't parse datetime: " + remaining);
+                }
+            }else if (tokens.length >= 2 && tokens[0].equals("User-Agent:")){
+
+                // user browsing on mobile?
+                if(remaining.toLowerCase().contains("iphone")){
+                    usingMobile = true;
                 }
             }
-            line = inFromClient.readLine();
+            line = inFromClient.readLine(); // get next line
             }
 
-        // System.out.print();ut optional slash at end
         if(!WWW_ROOT.substring(WWW_ROOT.length() - 1).equals("/")){
             WWW_ROOT = WWW_ROOT + "/";
         }
        
-
         // map to file name
         fileName = WWW_ROOT + urlName;
-        DEBUG("Map to File name: " + fileName);
-
         fileInfo = new File( fileName );
-        if ( !fileInfo.isFile() ) 
-        {
+
+        // if blank, try mobile and regular index.html
+        if (!fileInfo.isFile() && urlName.equals("") && usingMobile){
+            urlName = "index_m.html";
+            fileName = WWW_ROOT + urlName;
+            fileInfo = new File(fileName);
+        }
+
+        if(!fileInfo.isFile() && urlName.equals("")){
+            urlName = "index.html";
+            fileName = WWW_ROOT + urlName;
+            fileInfo = new File(fileName);
+        }
+        
+        if(!fileInfo.isFile()){
             outputError(404,  "Not Found");
             fileInfo = null;
         }
+
+        DEBUG("Map to File name: " + fileName);
 
     } // end mapURL2file
 
