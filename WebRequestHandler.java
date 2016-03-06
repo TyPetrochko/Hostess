@@ -167,7 +167,6 @@ class WebRequestHandler {
                 }
             }
             }else if (tokens.length >= 2 && tokens[0].equals("If-Modified-Since:")){
-                
                 // try to parse if-modified-since date
                 try{
                     ifModifiedSince = LocalDateTime.parse(remaining, 

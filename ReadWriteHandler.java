@@ -182,12 +182,17 @@ public class ReadWriteHandler implements IReadWriteHandler {
 
     // handle a web-request
     private void generateResponse() throws IOException {
-        AsyncWebRequestHandler a = new AsyncWebRequestHandler(request, 
-            outBuffer, AsyncServer.virtualHosts);
-
-        a.processRequest();
-        outBuffer.flip();
-        responseReady = true;
+        try{
+            AsyncWebRequestHandler a = new AsyncWebRequestHandler(request, 
+                outBuffer, AsyncServer.virtualHosts);
+            a.processRequest();
+            outBuffer.flip();
+            responseReady = true;
+        }catch (Exception e){
+            System.out.println("Couldn't asnyc handle");
+            e.printStackTrace();
+            throw new IOException();
+        }
     } // end of generate response
     
 

@@ -97,62 +97,95 @@ public class Java7AsyncServer{
 class Java7AsyncHandler{
 	AsynchronousSocketChannel toHandle;
 
+	boolean doneReading;
+	boolean doneWriting;
+
 	final ByteBuffer in;
 	final ByteBuffer out;
+
+	StringBuffer request;
+
 	public Java7AsyncHandler(AsynchronousSocketChannel toHandle){
 		this.toHandle = toHandle;
 		in = ByteBuffer.allocate(1024);
 		out = ByteBuffer.allocate(1024);
+		request = new StringBuffer(1024);
+		doneReading = false;
+		doneWriting = false;
+		System.out.println("Making a new handler");
 	}
 
 	// set up async read and write handlers for a new connection
 	public void handle(){
 		in.clear();
+		out.clear();
 
+		read();
+	}
+
+	public void read(){
 		// specify read completion callback, with timeout
-		toHandle.read(in,
-			Java7AsyncServer.INCOMPLETE_TIMEOUT, TimeUnit.MILLISECONDS, null,
-			new CompletionHandler<Integer, Void>(){
+		toHandle.read(in, Java7AsyncServer.INCOMPLETE_TIMEOUT, 
+			TimeUnit.MILLISECONDS, null, new CompletionHandler<Integer, Void>(){
 
-				// when a read is successful
-				public void completed(Integer bytesRead, Void att){
-					try{
+			// when a read is successful
+			public void completed(Integer bytesRead, Void att){
+				try{
+					// clear outbuffer and prepare to read from in
+					out.clear();
 
-						// clear outbuffer and prepare to read from in
-						out.clear();
-						in.flip();
-						StringBuffer request = new StringBuffer(4096);
-						request.append(new String(in.array(), "US-ASCII"));
+					in.flip();
+			        byte[] msg_bytes = new byte[in.remaining()];
+			        in.get(msg_bytes);
 
-						// handle the request
+			        // Convert to string
+			        String line = new String(msg_bytes, "US-ASCII");
+
+			        // Add on to current message
+			        request.append(line);
+
+					// only process request if it's finished
+					//if(upToHere.endsWith("\r\n\r\n") || upToHere.substring(upToHere.length() - bytesRead).equals("\r\n")){
+					if(request.toString().endsWith("\r\n\r\n") || line.equals("")){
+			            // handle the request
 						new AsyncWebRequestHandler(request, out, 
 							Java7AsyncServer.virtualHosts).processRequest();
 
 						// write to out
 	        			out.flip();
 	        			toHandle.write(out);
-        			}catch (Exception e){
-        				System.out.println("Error handling client socket: ");
-        				e.printStackTrace();
-        			}finally{
-        				try{
+	        			try{
 							toHandle.close();
 						}catch (Exception e){
 							System.out.println("Couldn't close socket");
 							e.printStackTrace();
 						}
-        			}
-				}
-
-				// in case of timeout, close socket connection
-				public void failed (Throwable ex, Void att){
-					try{
+			        }else{
+			        	in.clear();
+			        	read();
+			        }
+    			}catch (Exception e){
+    				System.out.println("Error handling client socket: ");
+    				e.printStackTrace();
+    				try{
 						toHandle.close();
-					}catch (Exception e){
+					}catch (Exception ee){
 						System.out.println("Couldn't close socket");
-						e.printStackTrace();
+						ee.printStackTrace();
 					}
+    			}
+			}
+
+			// in case of timeout, close socket connection
+			public void failed (Throwable ex, Void att){
+				System.out.println("Failed!");
+				try{
+					toHandle.close();
+				}catch (Exception e){
+					System.out.println("Couldn't close socket");
+					e.printStackTrace();
 				}
-			});		
+			}
+		});
 	}
 }

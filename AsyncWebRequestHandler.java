@@ -53,7 +53,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 // if checking "if-modified-since", we may want to just notify
                 if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
                     outputNotModified();
-                    return;
                 }else{
                     outputResponseHeader();
                     outputResponseBody();
@@ -200,6 +199,16 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
     private void outputResponseBody() throws IOException 
     {
+        if(fileInfo.canExecute()){
+            System.out.println("Run cgi script now!");
+            try{
+                runCGI();
+            }catch (Exception e){
+                System.err.println("Can't run CGI script");
+                e.printStackTrace();
+            }
+            return;
+        }
 
         int fileSize = (int) fileInfo.length();
         writer.append("Content-Length: " + fileSize + "\r\n");
@@ -238,9 +247,11 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         InputStream procOut = pb.start().getInputStream();
         byte[] buffer = new byte[1024];
         int bytesRead;
+
         while ((bytesRead = procOut.read(buffer)) != -1)
         {
-            outBuff.put(buffer);
+            int bytesToPut = Math.min(outBuff.remaining(), bytesRead);
+            outBuff.put(buffer, 0, bytesToPut);
         }
     }
 
@@ -264,6 +275,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
     void outputNotModified()
     {
+        System.out.println("Well, it wasn't modified!");
         try {
             writer.append("HTTP/1.0 304 Not Modified\r\n");
         } catch (Exception e) {}
