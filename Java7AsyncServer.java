@@ -105,6 +105,8 @@ class Java7AsyncHandler{
 
 	StringBuffer request;
 
+	AsyncWebRequestHandler asyncHandler;
+
 	public Java7AsyncHandler(AsynchronousSocketChannel toHandle){
 		this.toHandle = toHandle;
 		in = ByteBuffer.allocate(1024);
@@ -121,6 +123,10 @@ class Java7AsyncHandler{
 		out.clear();
 
 		read();
+	}
+
+	public void setRequestHandler(AsyncWebRequestHandler a){
+		asyncHandler = a;
 	}
 
 	public void read(){
@@ -147,19 +153,15 @@ class Java7AsyncHandler{
 					// only process request if it's finished
 					//if(upToHere.endsWith("\r\n\r\n") || upToHere.substring(upToHere.length() - bytesRead).equals("\r\n")){
 					if(request.toString().endsWith("\r\n\r\n") || line.equals("")){
-			            // handle the request
-						new AsyncWebRequestHandler(request, out, 
-							Java7AsyncServer.virtualHosts).processRequest();
+
+			            // handle the request and store handler
+						AsyncWebRequestHandler a =  new AsyncWebRequestHandler(request, 
+							out, Java7AsyncServer.virtualHosts);
+						setRequestHandler(a);
+						a.processRequest();
 
 						// write to out
-	        			out.flip();
-	        			toHandle.write(out);
-	        			try{
-							toHandle.close();
-						}catch (Exception e){
-							System.out.println("Couldn't close socket");
-							e.printStackTrace();
-						}
+	        			write();
 			        }else{
 			        	in.clear();
 			        	read();
@@ -175,10 +177,9 @@ class Java7AsyncHandler{
 					}
     			}
 			}
-
 			// in case of timeout, close socket connection
 			public void failed (Throwable ex, Void att){
-				System.out.println("Failed!");
+				System.out.println("Reading failed");
 				try{
 					toHandle.close();
 				}catch (Exception e){
@@ -187,5 +188,43 @@ class Java7AsyncHandler{
 				}
 			}
 		});
+	}
+
+	public void write(){
+		out.flip();
+		toHandle.write(out, null, new CompletionHandler<Integer, Void>(){
+			// probably gonna throw an error about not accessing in static w/e
+			public void completed(Integer bytesWritten, Void att){
+				if(asyncHandler.isDoneProcessing()){
+					System.out.println("We finished!");
+					try{
+						toHandle.close();
+					}catch (Exception e){
+						System.out.println("Couldn't close socket");
+						e.printStackTrace();
+					}
+				}else{
+					System.out.println("Not done... write some more!");
+					out.clear();
+					try{
+						asyncHandler.continueProcessing();
+						write();
+					}catch (Exception e){
+						System.err.println("Couldn't continue processing file");
+						e.printStackTrace();
+					}
+				}
+			}
+			public void failed (Throwable ex, Void att){
+				System.out.println("Writing failed");
+				try{
+					toHandle.close();
+				}catch (Exception e){
+					System.out.println("Couldn't close socket");
+					e.printStackTrace();
+				}
+			}
+		});
+		
 	}
 }

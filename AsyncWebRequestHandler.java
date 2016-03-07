@@ -22,6 +22,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     FileInputStream fileStream;
 
     boolean doneProcessing;
+    long progress; // how many bytes we've read through
 
     public AsyncWebRequestHandler(StringBuffer inBuff, ByteBuffer outBuff,
                  List<VirtualHost> virtualHosts) throws Exception
@@ -33,6 +34,9 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
         inFromClient = new BufferedReader(new StringReader(inBuff.toString()));
         writer = new StringBuilder();
+
+        doneProcessing = false;
+        progress = 0;
 
     }
 
@@ -220,16 +224,44 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         fileStream  = new FileInputStream (fileName);
     
         if(fileSize > outBuff.remaining()){
+            System.out.println("Not done yet");
             byte [] batch = new byte[outBuff.remaining()];
             fileStream.read(batch);
             outBuff.put(batch);
             doneProcessing = false;
+            progress += batch.length;
         }else{
+            System.out.println("Done!");
             byte[] fileInBytes = new byte[fileSize];
             fileStream.read(fileInBytes);
             outBuff.put(fileInBytes);
             doneProcessing = true;
         }
+    }
+
+    public boolean continueProcessing() throws Exception{
+        // assume that outBuff has been cleared
+        if(outBuff.remaining() <= 0){
+            System.err.println("Outbuff hasn't been cleared");
+            throw new Exception();
+        }
+
+        int fileSize = (int) fileInfo.length();
+
+        if (fileSize - progress > outBuff.remaining()){
+            byte [] batch = new byte[outBuff.remaining()];
+            fileStream.read(batch);
+            outBuff.put(batch);
+            doneProcessing = false;
+            progress += batch.length;
+        }else{
+            byte[] fileInBytes = new byte[fileSize - (int)progress];
+            fileStream.read(fileInBytes);
+            outBuff.put(fileInBytes);
+            doneProcessing = true;
+        }
+
+        return doneProcessing;
     }
 
     private void runCGI() throws Exception{
@@ -285,5 +317,9 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     {
        if (_DEBUG)
           System.out.println( s );
+    }
+
+    public boolean isDoneProcessing(){
+        return doneProcessing;
     }
 }
