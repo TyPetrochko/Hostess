@@ -11,4 +11,10 @@ if ($company =~ /appl/) {
  print "150";
 }
 print "</h1>";
+
+for (my $i=100; $i >= 0; $i--) {
+ print "<p>$i bottles of beer on the wall</p>";
+}
+
+print "<p> That's all folks! <\p>";
 print "</html>"; 

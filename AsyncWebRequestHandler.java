@@ -24,6 +24,10 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     boolean doneProcessing;
     long progress; // how many bytes we've read through
 
+    byte[] cgiBuffer;
+    InputStream cgiInput;
+    long cgiBytesRead;
+
     public AsyncWebRequestHandler(StringBuffer inBuff, ByteBuffer outBuff,
                  List<VirtualHost> virtualHosts) throws Exception
     {
@@ -206,12 +210,15 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         if(fileInfo.canExecute()){
             System.out.println("Run cgi script now!");
             try{
+                isExecutable = true;
                 runCGI();
             }catch (Exception e){
                 System.err.println("Can't run CGI script");
                 e.printStackTrace();
             }
             return;
+        }else{
+            isExecutable = false;
         }
 
         int fileSize = (int) fileInfo.length();
@@ -246,6 +253,11 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             throw new Exception();
         }
 
+        if(isExecutable){
+            continueRunningCGI();
+            return doneProcessing;
+        }
+
         int fileSize = (int) fileInfo.length();
 
         if (fileSize - progress > outBuff.remaining()){
@@ -265,6 +277,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     }
 
     private void runCGI() throws Exception{
+        System.out.println("Running CGI first time");
 
         // build process and set query string in environment variable
         ProcessBuilder pb = new ProcessBuilder(fileName);
@@ -276,15 +289,46 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         flushWriter();
 
         // funnel into the pipe 1024 bytes at a time
-        InputStream procOut = pb.start().getInputStream();
-        byte[] buffer = new byte[1024];
-        int bytesRead;
+        cgiInput = pb.start().getInputStream();
+        cgiBuffer = new byte[1024];
 
-        while ((bytesRead = procOut.read(buffer)) != -1)
+        long batchProgress = 0;
+        while ((cgiBytesRead = cgiInput.read(cgiBuffer)) != -1)
         {
-            int bytesToPut = Math.min(outBuff.remaining(), bytesRead);
-            outBuff.put(buffer, 0, bytesToPut);
+            if(outBuff.remaining() < cgiBytesRead){
+                // save buffer state, don't go any further
+                doneProcessing = false;
+                progress += batchProgress;
+                return;
+            }else{
+                outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
+                System.out.println("Put");
+            }
         }
+        doneProcessing = true;
+    }
+
+    private void continueRunningCGI() throws Exception{
+        System.out.println("Running CGI again");
+        
+        // flush remaining bytes left from last pass
+        outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
+
+        long batchProgress = 0;
+        while ((cgiBytesRead = cgiInput.read(cgiBuffer)) != -1)
+        {
+            if(outBuff.remaining() < cgiBytesRead){
+                // save buffer, don't go any further
+                doneProcessing = false;
+                progress += batchProgress;
+                return;
+            }else{
+                outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
+                batchProgress += cgiBytesRead;
+            }
+        }
+        progress += batchProgress;
+        doneProcessing = true;
     }
 
     void flushWriter(){

@@ -31,6 +31,7 @@ class WebRequestHandler {
     ZonedDateTime ifModifiedSince;
     ZonedDateTime lastModifiedZdt;
 
+    boolean isExecutable;
     boolean usingMobile;
 
 
@@ -241,8 +242,11 @@ class WebRequestHandler {
     private void outputResponseBody() throws Exception 
     {
         if(fileInfo.canExecute()){
+            isExecutable = true;
             runCGI();
             return;
+        }else{
+            isExecutable = false;
         }
 
         int numOfBytes = (int) fileInfo.length();

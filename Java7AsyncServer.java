@@ -179,7 +179,6 @@ class Java7AsyncHandler{
 			}
 			// in case of timeout, close socket connection
 			public void failed (Throwable ex, Void att){
-				System.out.println("Reading failed");
 				try{
 					toHandle.close();
 				}catch (Exception e){
