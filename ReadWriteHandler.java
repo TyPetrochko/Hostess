@@ -14,6 +14,8 @@ public class ReadWriteHandler implements IReadWriteHandler {
 
     private StringBuffer request;
 
+    private AsyncWebRequestHandler asyncHandler;
+
     // private enum State {
     // READ_REQUEST, REQUEST_COMPLETE, GENERATING_RESPONSE, RESPONSE_READY,
     // RESPONSE_SENT
@@ -107,8 +109,7 @@ public class ReadWriteHandler implements IReadWriteHandler {
                 + "; from buffer " + outBuffer);
         int writeBytes = client.write(outBuffer);
         Debug.DEBUG("handleWrite: write " + writeBytes + " bytes; after write " + outBuffer);
-
-        if (responseReady && (outBuffer.remaining() == 0)) {
+        if (responseReady && (outBuffer.remaining() == 0) && asyncHandler.isDoneProcessing()) {
             responseSent = true;
             client.shutdownInput();
             client.close();
@@ -117,10 +118,16 @@ public class ReadWriteHandler implements IReadWriteHandler {
             Debug.DEBUG("handleWrite: responseSent");
         }else{
             // update state
+            try{
+                outBuffer.clear();
+                asyncHandler.continueProcessing();
+                outBuffer.flip();
+            }catch (Exception e){
+                System.out.println("Encountered error continuing processing large file");
+                e.printStackTrace();
+            }
             updateState(key);    
         }
-
-        
 
         // try {Thread.sleep(5000);} catch (InterruptedException e) {}
         Debug.DEBUG("handleWrite->");
@@ -183,9 +190,9 @@ public class ReadWriteHandler implements IReadWriteHandler {
     // handle a web-request
     private void generateResponse() throws IOException {
         try{
-            AsyncWebRequestHandler a = new AsyncWebRequestHandler(request, 
+            asyncHandler = new AsyncWebRequestHandler(request, 
                 outBuffer, AsyncServer.virtualHosts);
-            a.processRequest();
+            asyncHandler.processRequest();
             outBuffer.flip();
             responseReady = true;
         }catch (Exception e){
