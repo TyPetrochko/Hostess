@@ -6,3 +6,4 @@
 housekeeping stuff:
 - clean up code, remove comments
 - rename "DEFAULT_PORT" to "PORT"
+- make sure that requests to missing files are handled gracefully

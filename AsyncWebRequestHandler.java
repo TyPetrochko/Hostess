@@ -65,11 +65,16 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                     outputResponseHeader();
                     outputResponseBody();
                 }
-            } // do not handle error
+            } else{
+                // some error occurred
+                doneProcessing = true;
+            }
 
         } catch (Exception e) {
             outputError(400, "Server error");
-            e.printStackTrace();
+            System.out.println("We encountered error but we're done processing!");
+            doneProcessing = true;
+            //e.printStackTrace();
         }
 
         flushWriter();

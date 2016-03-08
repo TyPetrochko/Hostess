@@ -60,8 +60,8 @@ public class AsyncServer {
         Dispatcher dispatcher = new Dispatcher();
 
         // make a timeout thread as well
-        //TimeoutThread timeout = new TimeoutThread(dispatcher);
-        Timeout t = new Timeout(INCOMPLETE_TIMEOUT);
+        TimeoutThread timeout = new TimeoutThread(dispatcher);
+        //Timeout t = new Timeout(INCOMPLETE_TIMEOUT);
 
         // open server channel
         ServerSocketChannel sch = openServerChannel(DEFAULT_PORT);
@@ -79,7 +79,7 @@ public class AsyncServer {
             // start dispatcher
             dispatcherThread = new Thread(dispatcher);
             dispatcherThread.start();
-            //timeout.start();
+            timeout.start();
         } catch (IOException ex) {
             System.out.println("Cannot register and start server");
             System.exit(1);

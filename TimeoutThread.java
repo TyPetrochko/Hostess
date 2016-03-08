@@ -15,10 +15,10 @@ public class TimeoutThread extends Thread {
 	public void run (){
 		System.out.println("Timeout thread is running");
 
-		// remove unwanted connections every ~200ms
+		// remove stale/timed-out connections periodically
 		while(true){
 			try{
-				Thread.sleep(200);
+				Thread.sleep(500);
 			} catch (Exception e){
 				System.out.println("Couldn't fall asleep");
 				e.printStackTrace();
@@ -30,20 +30,25 @@ public class TimeoutThread extends Thread {
 				Long when = (Long) pair.getValue();
 				SelectionKey key = (SelectionKey) pair.getKey();
 
-				// must deregister key, cancel channel
 				if(when.longValue() < rightNow){
-					System.out.println(key + " timed out!");
-					deadlines.remove(key);
-					key.cancel();
-					try{
-						key.channel().close();
-					}catch (Exception e){
-						System.out.println("Couldn't disconnect client");
-						e.printStackTrace();
+					// thread timed out
+					if (key.isValid()){
+						// abort this key
+						System.out.println("Thread timed out!");
+						deadlines.remove(key);
+						key.cancel();
+						try{
+							key.channel().close();
+						}catch (Exception e){
+							System.out.println("Couldn't disconnect client");
+							e.printStackTrace();
+						}
+					}else{
+						System.out.println("Cleaning up key");
+						deadlines.remove(key);
 					}
 				}
 			}
-
 		}
 	}
 

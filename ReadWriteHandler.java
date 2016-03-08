@@ -125,6 +125,7 @@ public class ReadWriteHandler implements IReadWriteHandler {
             }catch (Exception e){
                 System.out.println("Encountered error continuing processing large file");
                 e.printStackTrace();
+                responseSent = true; // don't continue with this file
             }
             updateState(key);    
         }
