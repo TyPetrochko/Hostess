@@ -26,6 +26,7 @@ public class CompetingServiceThread extends Thread {
 
 	        synchronized (welcomeSocket) {         
 		        try {
+		        	WebServer.numUsers++;
 		            s = welcomeSocket.accept();
 		        } catch (IOException e) {
 		        	System.out.println("Thread " + this 
@@ -40,7 +41,7 @@ public class CompetingServiceThread extends Thread {
 			}catch (Exception e){
 				e.printStackTrace();
 			}
-			
+			WebServer.numUsers--;
 	    } // end while
 		
     } // end run

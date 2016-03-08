@@ -1,8 +1,7 @@
-5) Make Async Servers capable of handling large files
-6) Implement load-balancing
 7) Fix Timeout Thread pool
 8) Implement full CGI Environment variables
-9) Debug like a madman. See below.
+9) Add Async cache
+10) Start debugging grind
 
 housekeeping stuff:
 - clean up code, remove comments

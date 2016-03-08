@@ -38,11 +38,13 @@ public class BusyWaitServiceThread extends Thread {
 		        } // end of sync
 	        } // end while
 	        try{
+	        	WebServer.numUsers++;
 				WebRequestHandler wrh = new WebRequestHandler( s, virtualHosts );
 				wrh.processRequest();
 			}catch (Exception e){
 				e.printStackTrace();
 			}
+			WebServer.numUsers--;
 		}
     } // end run
 } // end ServiceThread

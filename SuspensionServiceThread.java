@@ -19,6 +19,7 @@ public class SuspensionServiceThread extends Thread {
     }
   
     public void run() {
+    	
 
 	    System.out.println("Thread " + this + " started.");
 
@@ -43,14 +44,17 @@ public class SuspensionServiceThread extends Thread {
 	        	}
 
 	        	s = (Socket) sockets.remove(0);
+	        	WebServer.numUsers++;
 	        }
 
 	        try{
 				WebRequestHandler wrh = new WebRequestHandler( s, virtualHosts );
 				wrh.processRequest();
+
 			}catch (Exception e){
 				e.printStackTrace();
 			}
+			WebServer.numUsers--;
 		}
     } // end run
 } // end ServiceThread

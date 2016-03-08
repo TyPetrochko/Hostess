@@ -32,6 +32,7 @@ class WebRequestHandler {
     ZonedDateTime lastModifiedZdt;
 
     boolean isExecutable;
+    boolean isLoadBalancing = false;
     boolean usingMobile;
 
 
@@ -69,7 +70,9 @@ class WebRequestHandler {
                 ZoneId.of("GMT"));
 
             // if checking "if-modified-since", we may want to just notify
-            if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
+            if (isLoadBalancing){
+                loadBalance();
+            }else if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
                 outputNotModified();
                 return;
             }else{
@@ -208,7 +211,9 @@ class WebRequestHandler {
             fileInfo = new File(fileName);
         }
         
-        if(!fileInfo.isFile()){
+        if(!fileInfo.isFile() && urlName.equalsIgnoreCase("load")){
+            isLoadBalancing = true;
+        }else if(!fileInfo.isFile()){
             outputError(404,  "Not Found");
             fileInfo = null;
         }
@@ -304,7 +309,29 @@ class WebRequestHandler {
         try {
             outToClient.writeBytes("HTTP/1.0 304 Not Modified\r\n");
         } catch (Exception e) {}
-    }    
+    }
+
+    private void loadBalance(){
+        if(WebServer.loadBalancer != null){
+            Map<String, Object> statusVars = new HashMap<String, Object>();
+            if(WebServer.isOverloaded){
+                statusVars.put("isOverloaded", null);
+            }
+            statusVars.put("numUsers", WebServer.numUsers);
+            statusVars.put("maxUsers", WebServer.maxUsers);
+            statusVars.put("maxLoadFactor", WebServer.maxLoadFactor);
+            try{
+                if(WebServer.loadBalancer.canAcceptNewConnections(statusVars)){
+                    outToClient.writeBytes("HTTP/1.0 200 OK\r\n");
+                }else{
+                    outToClient.writeBytes("HTTP/1.0 503 Service Unavailable\r\n");
+                }
+            }catch (Exception e){
+                System.err.println("Error using load balancer");
+                e.printStackTrace();
+            }
+        }
+    }
 
     static void DEBUG(String s) 
     {

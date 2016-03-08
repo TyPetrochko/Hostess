@@ -17,6 +17,13 @@ class WebServer{
     public static String WWW_ROOT = "./";
     public static int threadPoolSize = 1;
     public static int cacheSize = 0;
+    public static ILoadBalancer loadBalancer = null;
+
+    // track stats for load balancing - these don't otherwise affect performance
+    public static boolean isOverloaded = false;
+    public static int numUsers = 0;
+    public static int maxUsers = 100;
+    public static float maxLoadFactor = 1.0f;
 
     public static void main(String args[]) throws Exception  {
 
@@ -31,6 +38,8 @@ class WebServer{
 					threadPoolSize = cp.threadPoolSize;
 				if(cp.cacheSize != -1)
 					cacheSize = cp.cacheSize;
+				if(cp.loadBalancer != null)
+					loadBalancer = cp.loadBalancer;
 			}catch(Exception e){
 				System.out.println("Could not load configurations: " + args[2]);
 				e.printStackTrace();
@@ -118,7 +127,8 @@ class WebServer{
 
     // have all threads compete on a single socket
     public static void competing() throws IOException{
-        // create thread pool
+
+    	// create thread pool
         CompetingServiceThread[] threads = 
         new CompetingServiceThread[threadPoolSize];
 
@@ -144,6 +154,7 @@ class WebServer{
 
     	new BusyWaitDelegate(socketPool, listenSocket).start();
     };
+
     public static void suspension(){
     	List<Socket> socketPool = new Vector<Socket>();
     	// ReentrantLock lock = new ReentrantLock();

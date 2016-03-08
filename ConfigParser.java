@@ -13,6 +13,7 @@ class ConfigParser{
     public int threadPoolSize = -1;
     public int cacheSize = -1;
     public float incompleteTimeout = -1.0f;
+    public ILoadBalancer loadBalancer = null;
     public List<VirtualHost> virtualHosts;
 
     public ConfigParser(String configFile) throws Exception {
@@ -34,6 +35,8 @@ class ConfigParser{
 	        		cacheSize = Integer.parseInt(words[1]);
 	        	}else if (words[0].equalsIgnoreCase("IncompleteTimeout")) {
 	        		incompleteTimeout = Float.parseFloat(words[1]);
+	        	}else if (words[0].equalsIgnoreCase("LoadBalancer")){
+	        		loadBalancer = getLoadBalancer(words[1].trim());
 	        	}else if(line.contains("VirtualHost")){
 	        		VirtualHost v = new VirtualHost();
 
@@ -56,5 +59,21 @@ class ConfigParser{
 	    }catch(Exception e){
 	    	throw e;
 	    }
+    }// end of constructor
+
+    private ILoadBalancer getLoadBalancer(String classPath){
+    	ILoadBalancer toReturn = null;
+		try {
+	        Class<?> c = Class.forName(classPath);
+	        if (ILoadBalancer.class.isAssignableFrom(c)) {
+	        	Object o = c.newInstance();
+			    toReturn = ILoadBalancer.class.cast(o);
+			}
+	    } catch (Exception e) {
+	    	System.out.println("Couldn't load class from config file");
+	        e.printStackTrace();
+	    }
+
+	    return toReturn;
     }
 } // end of class WebServer
