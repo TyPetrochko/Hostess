@@ -41,14 +41,13 @@ class SHTTPTestClient{
 			e.printStackTrace();
 		}
 
-		
-
 		System.out.println("Total number of files downloaded: " + Tester.totalFilesDownloaded.get());
 		System.out.println("Total number of files downloaded/sec: " + (Tester.totalFilesDownloaded.get() / (testingTime)));
 		System.out.println("Average wait time/download (ms): " + (Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
 		float mbps = (float)(Tester.totalBytesDownloaded.get() / (testingTime * 1000000));
+		System.out.println("Average bytes downloaded/sec: " + (Tester.totalBytesDownloaded.get() / testingTime));
 		System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
-		System.out.println("Bytes per second: " + (Tester.totalBytesDownloaded.get() / testingTime));
+		
 	} // end main
 
 	public static void printUsage(){
@@ -162,8 +161,10 @@ class Tester implements Runnable{
 					if(response == null){
 						return;
 					}else{
+						bytesDownloaded += response.length();
 						String[]tkz = response.split(" ");
 						if(tkz.length < 2 || !tkz[1].equals("200")){
+							System.err.println("Received a bad response: " + response);
 							return;
 						}
 					}
@@ -171,10 +172,11 @@ class Tester implements Runnable{
 					// Find content length and download file
 					String line = inReader.readLine();
 					while(line != ""){
+						bytesDownloaded += line.length();
 						String[] tokens = line.split(" ");
 						if(line.contains("Content-Length")){
 							int responseLength = Integer.parseInt(tokens[1]);
-							inReader.skip(responseLength);
+							inReader.read(new char[responseLength]);
 							bytesDownloaded += responseLength;
 							break;
 						}

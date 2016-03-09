@@ -18,7 +18,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     ByteBuffer outBuff;
     StringBuffer inBuff;
 
-    StringBuilder writer;
     FileInputStream fileStream;
 
     boolean doneProcessing;
@@ -45,7 +44,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         this.port = port;
 
         inFromClient = new BufferedReader(new StringReader(inBuff.toString()));
-        writer = new StringBuilder();
 
         doneProcessing = false;
         progress = 0;
@@ -85,7 +83,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             e.printStackTrace();
         }
 
-        flushWriter();
     } // end of processRequest
 
     /*
@@ -195,27 +192,25 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 outToClient.writeBytes("Content-Type: text/plain\r\n");
             */
 
-        writer.append("HTTP/1.0 200 Document Follows\r\n");
-        writer.append("Date: " 
+        write("HTTP/1.0 200 Document Follows\r\n");
+        write("Date: " 
             + new SimpleDateFormat("EEEE, dd MMM HH:mm:ss z").format(new Date()) + "\r\n");
 
         if(serverName != null){
-            writer.append("Server: " + serverName + "\r\n");
+            write("Server: " + serverName + "\r\n");
         }
 
-        writer.append("Last-Modified: " + DateTimeFormatter
+        write("Last-Modified: " + DateTimeFormatter
             .RFC_1123_DATE_TIME.format(lastModifiedZdt) + "\r\n");
 
         if (urlName.endsWith(".jpg"))
-            writer.append("Content-Type: image/jpeg\r\n");
+            write("Content-Type: image/jpeg\r\n");
         else if (urlName.endsWith(".gif"))
-            writer.append("Content-Type: image/gif\r\n");
+            write("Content-Type: image/gif\r\n");
         else if (urlName.endsWith(".html") || urlName.endsWith(".htm"))
-            writer.append("Content-Type: text/html\r\n");
+            write("Content-Type: text/html\r\n");
         else
-            writer.append("Content-Type: text/plain\r\n");
-
-        flushWriter();
+            write("Content-Type: text/plain\r\n");
     }
 
     private void outputResponseBody() throws IOException 
@@ -234,10 +229,8 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             isExecutable = false;
         }
         int fileSize = (int) fileInfo.length();
-        writer.append("Content-Length: " + fileSize + "\r\n");
-        writer.append("\r\n");
-
-        flushWriter();
+        write("Content-Length: " + fileSize + "\r\n");
+        write("\r\n");
     
         // send file content
         fileStream  = new FileInputStream (fileName);
@@ -319,8 +312,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
         setEnvironmentVariables(env);
 
-        flushWriter();
-
         // funnel into the pipe 1024 bytes at a time
         cgiInput = pb.start().getInputStream();
         cgiBuffer = new byte[1024];
@@ -363,20 +354,10 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         doneProcessing = true;
     }
 
-    void flushWriter(){
-        try{
-            outBuff.put(writer.toString().getBytes("US-ASCII"));
-            writer = new StringBuilder();
-        }catch (Exception e) {
-            Debug.DEBUG("Error flushing StringBuilder to buffer");
-            e.printStackTrace();
-        }
-    }
-
     void outputError(int errCode, String errMsg)
     {
         try {
-            writer.append("HTTP/1.0 " + errCode + " " + errMsg + "\r\n");
+            write("HTTP/1.0 " + errCode + " " + errMsg + "\r\n");
             Debug.DEBUG("Could not write to file!");
         } catch (Exception e) {}
     }
@@ -385,8 +366,17 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     {
         Debug.DEBUG("Well, it wasn't modified!");
         try {
-            writer.append("HTTP/1.0 304 Not Modified\r\n");
+            write("HTTP/1.0 304 Not Modified\r\n");
         } catch (Exception e) {}
+    }
+
+    void write(String s){
+        try{
+            outBuff.put(s.getBytes("US-ASCII"));
+        }catch (Exception e){
+            Debug.DEBUG("Couldn't write to output buffer");
+            e.printStackTrace();
+        }
     }
 
     static void DEBUG(String s) 

@@ -2,6 +2,7 @@
 10) Start debugging grind
 11) Is there an async loadbalancer?
 12) Fix client
+13) Errors on client testing with sequential server
 
 housekeeping stuff:
 - clean up code, remove comments
