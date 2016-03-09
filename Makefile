@@ -44,6 +44,9 @@ test-async:
 test-java7: 
 	java Java7AsyncServer -config data/config.conf
 
+test-apache:
+	java SHTTPTestClient -server zoo.cs.yale.edu -servname zoo -port 80 -parallel 5 -files data/list1 -T 10
+
 load-balancer: ILoadBalancer.java MyLoadBalancer.java
 	javac $^
 

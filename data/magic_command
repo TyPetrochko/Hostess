@@ -1,0 +1,1 @@
+nl -s "/classes/cs433/web/www-root/html-big/" requests.txt | cut -c7- | head -n 50 >> list1
