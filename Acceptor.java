@@ -10,7 +10,7 @@ public class Acceptor implements IAcceptHandler {
     }
 
     public void handleException() {
-        System.out.println("handleException(): of Acceptor");
+        Debug.DEBUG("handleException(): of Acceptor");
     }
 
     public void handleAccept(SelectionKey key) throws IOException {

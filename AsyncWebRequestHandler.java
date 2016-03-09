@@ -80,7 +80,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
         } catch (Exception e) {
             outputError(400, "Server error");
-            System.out.println("We encountered error but we're done processing!");
+            Debug.DEBUG("We encountered error but we're done processing!");
             doneProcessing = true;
             e.printStackTrace();
         }
@@ -102,7 +102,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 doneProcessing = false;
             }
         }catch (Exception e) {
-            System.out.println("Error continuing to send large file");
+            Debug.DEBUG("Error continuing to send large file");
             e.printStackTrace();
         }
     }
@@ -221,7 +221,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     private void outputResponseBody() throws IOException 
     {
         if(fileInfo.canExecute()){
-            System.out.println("Run cgi script now!");
+            Debug.DEBUG("Run cgi script now!");
             try{
                 isExecutable = true;
                 runCGI();
@@ -245,7 +245,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
         // only cache files small enough to cache
         if(fileSize > outBuff.remaining()){
-            System.out.println("Not done yet");
+            Debug.DEBUG("Not done yet");
             byte [] batch = new byte[outBuff.remaining()];
             fileStream.read(batch);
             outBuff.put(batch);
@@ -257,12 +257,12 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             if(FileCache.globalCache.hasFile(fileName) && FileCache.globalCache
                 .cachedTimeMillis(fileName) > fileInfo.lastModified()){
                 // cache hit
-                System.out.println("Cache hit!");
+                Debug.DEBUG("Cache hit!");
                 fileInBytes = FileCache.globalCache.getFile(fileName);
             }
             else {
                 // cache miss; read in file
-                System.out.println("Cache miss :(");
+                Debug.DEBUG("Cache miss :(");
                 FileInputStream fileStream  = new FileInputStream (fileName);
                 fileInBytes = new byte[fileSize];
                 fileStream.read(fileInBytes);
@@ -307,7 +307,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     }
 
     private void runCGI() throws Exception{
-        System.out.println("Running CGI first time");
+        Debug.DEBUG("Running CGI first time");
 
         // build process and set query string in environment variable
         ProcessBuilder pb = new ProcessBuilder(fileName);
@@ -340,7 +340,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     }
 
     private void continueRunningCGI() throws Exception{
-        System.out.println("Running CGI again");
+        Debug.DEBUG("Running CGI again");
         
         // flush remaining bytes left from last pass
         outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
@@ -367,7 +367,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             outBuff.put(writer.toString().getBytes("US-ASCII"));
             writer = new StringBuilder();
         }catch (Exception e) {
-            System.out.println("Error flushing StringBuilder to buffer");
+            Debug.DEBUG("Error flushing StringBuilder to buffer");
             e.printStackTrace();
         }
     }
@@ -376,13 +376,13 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     {
         try {
             writer.append("HTTP/1.0 " + errCode + " " + errMsg + "\r\n");
-            System.out.println("Could not write to file!");
+            Debug.DEBUG("Could not write to file!");
         } catch (Exception e) {}
     }
 
     void outputNotModified()
     {
-        System.out.println("Well, it wasn't modified!");
+        Debug.DEBUG("Well, it wasn't modified!");
         try {
             writer.append("HTTP/1.0 304 Not Modified\r\n");
         } catch (Exception e) {}
@@ -391,7 +391,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     static void DEBUG(String s) 
     {
        if (_DEBUG)
-          System.out.println( s );
+          Debug.DEBUG( s );
     }
 
     public boolean isDoneProcessing(){

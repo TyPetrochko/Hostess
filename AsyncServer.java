@@ -46,12 +46,12 @@ public class AsyncServer {
                     DEFAULT_PORT = cp.port;
                 if(cp.incompleteTimeout != -1.0f){
                     INCOMPLETE_TIMEOUT = (long) (cp.incompleteTimeout * 1000);
-                    System.out.println("Timeout specified: " + INCOMPLETE_TIMEOUT);
+                    Debug.DEBUG("Timeout specified: " + INCOMPLETE_TIMEOUT);
                 }
                 if(cp.cacheSize != -1)
                     cacheSize = cp.cacheSize;
             }catch(Exception e){
-                System.out.println("Could not load configurations: " + args[1]);
+                Debug.DEBUG("Could not load configurations: " + args[1]);
                 e.printStackTrace();
                 return;
             }
@@ -90,7 +90,7 @@ public class AsyncServer {
             dispatcherThread.start();
             timeout.start();
         } catch (IOException ex) {
-            System.out.println("Cannot register and start server");
+            Debug.DEBUG("Cannot register and start server");
             System.exit(1);
         }
         // may need to join the dispatcher thread
@@ -98,7 +98,7 @@ public class AsyncServer {
     } // end of main
 
     public static void printUsage(){
-        System.out.println("Usage: java AsyncServer -config config.conf");
+        Debug.DEBUG("Usage: java AsyncServer -config config.conf");
     }
 
 } // end of class

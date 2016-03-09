@@ -101,14 +101,14 @@ class WebRequestHandler {
 
         
     } catch (Exception e) {
-        System.out.println("Encountered error, sending report and closing socket");
+        Debug.DEBUG("Encountered error, sending report and closing socket");
         e.printStackTrace();
         outputError(400, "Server error");
     } finally {
         try{
             connSocket.close();
         }catch (Exception e){
-            System.out.println("Couldn't close socket");
+            Debug.DEBUG("Couldn't close socket");
             e.printStackTrace();
         }
     }
@@ -153,7 +153,7 @@ class WebRequestHandler {
 
        // question mark means there's a query string
         if(urlName.contains("?")){
-            System.out.println("Detected question mark");
+            Debug.DEBUG("Detected question mark");
             String[]tokens = urlName.split("\\?");
             urlName = tokens[0];
             StringBuilder queryStringBuilder = new StringBuilder();
@@ -195,7 +195,7 @@ class WebRequestHandler {
                         DateTimeFormatter.RFC_1123_DATE_TIME).atZone(ZoneId.of("GMT"));
                 }catch(Exception e){
                     ifModifiedSince = null; // couldn't parse it
-                    System.out.println("Couldn't parse datetime: " + remaining);
+                    Debug.DEBUG("Couldn't parse datetime: " + remaining);
                 }
             }else if (tokens.length >= 2 && tokens[0].equals("User-Agent:")){
 
@@ -282,12 +282,12 @@ class WebRequestHandler {
         if(FileCache.globalCache.hasFile(fileName) && FileCache.globalCache
             .cachedTimeMillis(fileName) > fileInfo.lastModified()){
             // cache hit
-            System.out.println("Cache hit!");
+            Debug.DEBUG("Cache hit!");
             fileInBytes = FileCache.globalCache.getFile(fileName);
         }
         else {
             // cache miss
-            System.out.println("Cache miss :(");
+            Debug.DEBUG("Cache miss :(");
             FileInputStream fileStream  = new FileInputStream (fileName);
             fileInBytes = new byte[numOfBytes];
             fileStream.read(fileInBytes);
@@ -384,6 +384,6 @@ class WebRequestHandler {
     static void DEBUG(String s) 
     {
        if (_DEBUG)
-          System.out.println( s );
+          Debug.DEBUG( s );
     }
 }

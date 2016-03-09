@@ -40,7 +40,7 @@ class WebServer{
 				if(cp.loadBalancer != null)
 					loadBalancer = cp.loadBalancer;
 			}catch(Exception e){
-				System.out.println("Could not load configurations: " + args[2]);
+				Debug.DEBUG("Could not load configurations: " + args[2]);
 				e.printStackTrace();
 				return;
 			}
@@ -67,7 +67,7 @@ class WebServer{
 					suspension();
 					break;
 				default:
-					System.out.println("Could not detect server type " + args[0]);
+					Debug.DEBUG("Could not detect server type " + args[0]);
 					printUsage();
 					return;
 				}
@@ -86,9 +86,9 @@ class WebServer{
 
 
 		// list all listening hosts
-		System.out.println("server listening at: " + listenSocket);
+		Debug.DEBUG("server listening at: " + listenSocket);
 		for (VirtualHost v : virtualHosts){
-			System.out.println("host www root: " + v.documentRoot);
+			Debug.DEBUG("host www root: " + v.documentRoot);
 		}
     }
 
@@ -98,7 +98,7 @@ class WebServer{
 		    try {
 			    // take a ready connection from the accepted queue
 			    Socket connectionSocket = listenSocket.accept();
-			    System.out.println("\nReceive request from " + connectionSocket);
+			    Debug.DEBUG("\nReceive request from " + connectionSocket);
 		
 			    // process a request
 			    WebRequestHandler wrh = 
@@ -116,7 +116,7 @@ class WebServer{
 		while (true) {
 		    // take a ready connection from the accepted queue
 		    Socket connectionSocket = listenSocket.accept();
-		    System.out.println("\nReceive request from " + connectionSocket);
+		    Debug.DEBUG("\nReceive request from " + connectionSocket);
 	
 		    // process a request
 		    new SingleThreadRequestHandler(connectionSocket, virtualHosts).start();
@@ -170,8 +170,8 @@ class WebServer{
     };
 
     public static void printUsage(){
-    	System.out.println("Usage: java WebServer <Server> -config config.conf");
-	 	System.out.println("\tServer: sequential | per-request-thread | competing | busywait | suspension");
+    	Debug.DEBUG("Usage: java WebServer <Server> -config config.conf");
+	 	Debug.DEBUG("\tServer: sequential | per-request-thread | competing | busywait | suspension");
     }
 } // end of class WebServer
 
@@ -197,7 +197,7 @@ class BusyWaitDelegate extends Thread {
 		            socketPool.add(connSock);
 		        } // end of sync
 	        } catch (Exception e) {
-	        	System.out.println("server run failed.");
+	        	Debug.DEBUG("server run failed.");
 	        } // end of catch
 	    } // end of loop
 	}
@@ -226,7 +226,7 @@ class SuspensionDelegate extends Thread {
 		            socketPool.notifyAll();
 		        } // end of sync
 	        } catch (Exception e) {
-	        	System.out.println("server run failed.");
+	        	Debug.DEBUG("server run failed.");
 	        } // end of catch
 	    } // end of loop
 	}

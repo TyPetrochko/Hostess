@@ -21,7 +21,7 @@ public class Java7AsyncServer{
     	try{
     		toReturn = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(DEFAULT_PORT));	
     	}catch (Exception e){
-    		System.out.println("Problem opening async server socket channel");
+    		Debug.DEBUG("Problem opening async server socket channel");
     		e.printStackTrace();
     	}
 
@@ -34,7 +34,7 @@ public class Java7AsyncServer{
         getCommandLineArgs(args);
 
         // open server socket on port
-        System.out.println("Opening server on port " + DEFAULT_PORT);
+        Debug.DEBUG("Opening server on port " + DEFAULT_PORT);
         serverSocket = openServerChannel(DEFAULT_PORT);
 
         // make a new file cache singleton
@@ -63,7 +63,7 @@ public class Java7AsyncServer{
     		try{
     			Thread.sleep(5000);
     		}catch (Exception e){
-    			System.out.println("Main thread cannot sleep");
+    			Debug.DEBUG("Main thread cannot sleep");
     			e.printStackTrace();
     		}
     	}
@@ -87,7 +87,7 @@ public class Java7AsyncServer{
                 if(cp.cacheSize != -1)
                     cacheSize = cp.cacheSize;
             }catch(Exception e){
-                System.out.println("Could not load configurations: " + args[1]);
+                Debug.DEBUG("Could not load configurations: " + args[1]);
                 e.printStackTrace();
                 return;
             }
@@ -98,7 +98,7 @@ public class Java7AsyncServer{
     }
 
     public static void printUsage(){
-        System.out.println("Usage: java AsyncServer -config config.conf");
+        Debug.DEBUG("Usage: java AsyncServer -config config.conf");
     }
 }
 
@@ -118,12 +118,12 @@ class Java7AsyncHandler{
 
 	public Java7AsyncHandler(AsynchronousSocketChannel toHandle){
 		this.toHandle = toHandle;
-		in = ByteBuffer.allocate(1024);
-		out = ByteBuffer.allocate(1024);
+		in = ByteBuffer.allocate(1024 * 100);
+		out = ByteBuffer.allocate(1024 * 100);
 		request = new StringBuffer(1024);
 		doneReading = false;
 		doneWriting = false;
-		System.out.println("Making a new handler");
+		Debug.DEBUG("Making a new handler");
 	}
 
 	// set up async read and write handlers for a new connection
@@ -179,12 +179,12 @@ class Java7AsyncHandler{
 			        	read();
 			        }
     			}catch (Exception e){
-    				System.out.println("Error handling client socket: ");
+    				Debug.DEBUG("Error handling client socket: ");
     				e.printStackTrace();
     				try{
 						toHandle.close();
 					}catch (Exception ee){
-						System.out.println("Couldn't close socket");
+						Debug.DEBUG("Couldn't close socket");
 						ee.printStackTrace();
 					}
     			}
@@ -194,7 +194,7 @@ class Java7AsyncHandler{
 				try{
 					toHandle.close();
 				}catch (Exception e){
-					System.out.println("Couldn't close socket");
+					Debug.DEBUG("Couldn't close socket");
 					e.printStackTrace();
 				}
 			}
@@ -207,15 +207,15 @@ class Java7AsyncHandler{
 			// probably gonna throw an error about not accessing in static w/e
 			public void completed(Integer bytesWritten, Void att){
 				if(asyncHandler.isDoneProcessing()){
-					System.out.println("We finished!");
+					Debug.DEBUG("We finished!");
 					try{
 						toHandle.close();
 					}catch (Exception e){
-						System.out.println("Couldn't close socket");
+						Debug.DEBUG("Couldn't close socket");
 						e.printStackTrace();
 					}
 				}else{
-					System.out.println("Not done... write some more!");
+					Debug.DEBUG("Not done... write some more!");
 					out.clear();
 					try{
 						asyncHandler.continueProcessing();
@@ -227,11 +227,11 @@ class Java7AsyncHandler{
 				}
 			}
 			public void failed (Throwable ex, Void att){
-				System.out.println("Writing failed");
+				Debug.DEBUG("Writing failed");
 				try{
 					toHandle.close();
 				}catch (Exception e){
-					System.out.println("Couldn't close socket");
+					Debug.DEBUG("Couldn't close socket");
 					e.printStackTrace();
 				}
 			}
