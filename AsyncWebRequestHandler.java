@@ -237,9 +237,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         int fileSize = (int) fileInfo.length();
         write("Content-Length: " + fileSize + "\r\n");
         write("\r\n");
-    
-        // send file content
-        fileStream  = new FileInputStream (fileName);
 
         // only cache files small enough to cache
         if(fileSize > outBuff.remaining()){
@@ -264,13 +261,13 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 FileInputStream fileStream  = new FileInputStream (fileName);
                 fileInBytes = new byte[fileSize];
                 fileStream.read(fileInBytes);
+                fileStream.close();
 
                 // cache result
                 FileCache.globalCache.cacheIfPossible(fileName, fileInBytes);
             }
 
             outBuff.put(fileInBytes);
-            fileStream.close();
             doneProcessing = true;
         }
     }
