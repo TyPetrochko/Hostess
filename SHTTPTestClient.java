@@ -177,7 +177,8 @@ class Tester implements Runnable{
 						String[] tokens = line.split(" ");
 						if(line.contains("Content-Length")){
 							int responseLength = Integer.parseInt(tokens[1]);
-							int bytesRead = inReader.read(new char[responseLength]);
+							char[] readInto = new char[responseLength];
+							int bytesRead = inReader.read(readInto);
 							bytesDownloaded += bytesRead;
 							if(bytesRead != responseLength){
 								System.out.println("Server promised " 
