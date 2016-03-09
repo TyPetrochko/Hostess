@@ -15,6 +15,8 @@ import java.time.format.DateTimeFormatter;
 
 class AsyncWebRequestHandler extends WebRequestHandler {
 
+    public static int numHandlers = 0;
+
     ByteBuffer outBuff;
     StringBuffer inBuff;
 
@@ -43,6 +45,8 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
         this.port = port;
 
+        numHandlers++;
+
         inFromClient = new BufferedReader(new StringReader(inBuff.toString()));
 
         doneProcessing = false;
@@ -65,7 +69,9 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                     ZoneId.of("GMT"));
 
                 // if checking "if-modified-since", we may want to just notify
-                if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
+                if(isLoadBalancing){
+                    loadBalance();
+                }else if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
                     outputNotModified();
                 }else{
                     outputResponseHeader();
@@ -380,6 +386,24 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             Debug.DEBUG("Couldn't write to output buffer");
             e.printStackTrace();
         }
+    }
+
+    void loadBalance(){
+        if(LoadBalancer.loadBalancerSingleton != null){
+            Map<String, Object> statusVars = new HashMap<String, Object>();
+            statusVars.put("numUsers", numHandlers);
+            try{
+                if(LoadBalancer.loadBalancerSingleton.canAcceptNewConnections(statusVars)){
+                    write("HTTP/1.0 200 OK\r\n");
+                }else{
+                    write("HTTP/1.0 503 Service Unavailable\r\n");
+                }
+            }catch (Exception e){
+                System.err.println("Error using load balancer");
+                e.printStackTrace();
+            }
+        }
+        doneProcessing = true;
     }
 
     static void DEBUG(String s) 

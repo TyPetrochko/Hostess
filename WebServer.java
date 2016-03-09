@@ -16,7 +16,6 @@ class WebServer{
     public static String WWW_ROOT = "./";
     public static int threadPoolSize = 1;
     public static int cacheSize = 0;
-    public static ILoadBalancer loadBalancer = null;
 
     // track stats for load balancing - these don't otherwise affect performance
     public static boolean isOverloaded = false;
@@ -38,7 +37,7 @@ class WebServer{
 				if(cp.cacheSize != -1)
 					cacheSize = cp.cacheSize;
 				if(cp.loadBalancer != null)
-					loadBalancer = cp.loadBalancer;
+					new LoadBalancer(cp.loadBalancer);
 			}catch(Exception e){
 				Debug.DEBUG("Could not load configurations: " + args[2]);
 				e.printStackTrace();

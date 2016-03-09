@@ -334,8 +334,8 @@ class WebRequestHandler {
         } catch (Exception e) {}
     }
 
-    private void loadBalance(){
-        if(WebServer.loadBalancer != null){
+    void loadBalance(){
+        if(LoadBalancer.loadBalancerSingleton != null){
             Map<String, Object> statusVars = new HashMap<String, Object>();
             if(WebServer.isOverloaded){
                 statusVars.put("isOverloaded", null);
@@ -344,7 +344,7 @@ class WebRequestHandler {
             statusVars.put("maxUsers", WebServer.maxUsers);
             statusVars.put("maxLoadFactor", WebServer.maxLoadFactor);
             try{
-                if(WebServer.loadBalancer.canAcceptNewConnections(statusVars)){
+                if(LoadBalancer.loadBalancerSingleton.canAcceptNewConnections(statusVars)){
                     outToClient.writeBytes("HTTP/1.0 200 OK\r\n");
                 }else{
                     outToClient.writeBytes("HTTP/1.0 503 Service Unavailable\r\n");

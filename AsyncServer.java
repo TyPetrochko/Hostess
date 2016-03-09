@@ -50,6 +50,8 @@ public class AsyncServer {
                 }
                 if(cp.cacheSize != -1)
                     cacheSize = cp.cacheSize;
+                if(cp.loadBalancer != null)
+                    new LoadBalancer(cp.loadBalancer);
             }catch(Exception e){
                 Debug.DEBUG("Could not load configurations: " + args[1]);
                 e.printStackTrace();

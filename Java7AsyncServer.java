@@ -81,11 +81,12 @@ public class Java7AsyncServer{
                 // set any extra params
                 if(cp.port != -1)
                     DEFAULT_PORT = cp.port;
-                if(cp.incompleteTimeout != -1.0f){
+                if(cp.incompleteTimeout != -1.0f)
                     INCOMPLETE_TIMEOUT = (long) (cp.incompleteTimeout * 1000);
-                }
                 if(cp.cacheSize != -1)
                     cacheSize = cp.cacheSize;
+                if(cp.loadBalancer != null)
+					new LoadBalancer(cp.loadBalancer);
             }catch(Exception e){
                 Debug.DEBUG("Could not load configurations: " + args[1]);
                 e.printStackTrace();
