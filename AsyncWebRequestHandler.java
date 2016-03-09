@@ -79,9 +79,9 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         } catch (Exception e) {
             try{
                 fileStream.close();
-            }catch (Exception e){
+            }catch (Exception ee){
                 System.err.println("Could not close file stream");
-                e.printStackTrace();
+                ee.printStackTrace();
             }
             outputError(400, "Server error");
             Debug.DEBUG("We encountered error but we're done processing!");
