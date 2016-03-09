@@ -28,14 +28,21 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     InputStream cgiInput;
     long cgiBytesRead;
 
-    public AsyncWebRequestHandler(Socket connSocket, ServerSocket listenSocket, 
+    public AsyncWebRequestHandler(InetAddress remoteAddress, 
+        InetAddress serverAddress, int port,
         StringBuffer inBuff, ByteBuffer outBuff, 
         List<VirtualHost> virtualHosts) throws Exception
     {
-        super(connSocket, listenSocket, virtualHosts);
+        super(null, null, virtualHosts);
 
         this.inBuff = inBuff;
         this.outBuff = outBuff;
+
+        this.remoteAddress = remoteAddress;
+
+        this.serverAddress = serverAddress;
+
+        this.port = port;
 
         inFromClient = new BufferedReader(new StringReader(inBuff.toString()));
         writer = new StringBuilder();
@@ -292,7 +299,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             env.put("QUERY_STRING", QUERY_STRING);
         }
 
-        setEnvironmentVariables(connSocket, listenSocket, env);
+        setEnvironmentVariables(env);
 
         flushWriter();
 

@@ -10,6 +10,8 @@ public class Java7AsyncServer{
     public static long INCOMPLETE_TIMEOUT = 3000;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
 
+    public static AsynchronousServerSocketChannel serverSocket;
+
     public static AsynchronousServerSocketChannel openServerChannel(int port) {
 
     	// open a new async server socket
@@ -31,14 +33,14 @@ public class Java7AsyncServer{
 
         // open server socket on port
         System.out.println("Opening server on port " + DEFAULT_PORT);
-        AsynchronousServerSocketChannel ss = openServerChannel(DEFAULT_PORT);
+        serverSocket = openServerChannel(DEFAULT_PORT);
 
         // set up async callback for accepting a new client
-    	ss.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+    	serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
 			public void completed(AsynchronousSocketChannel ch, Void att) {
 
 				// accept the next connection
-				ss.accept(null, this);
+				serverSocket.accept(null, this);
 
 				// handle this connection
 				Java7AsyncHandler handler = new Java7AsyncHandler(ch);
@@ -52,7 +54,7 @@ public class Java7AsyncServer{
 			});
 
     	// to prevent application from closing, do a semi-busy-wait
-    	while(ss.isOpen()){
+    	while(serverSocket.isOpen()){
     		try{
     			Thread.sleep(5000);
     		}catch (Exception e){
@@ -155,8 +157,11 @@ class Java7AsyncHandler{
 					if(request.toString().endsWith("\r\n\r\n") || line.equals("")){
 
 			            // handle the request and store handler
-						AsyncWebRequestHandler a =  new AsyncWebRequestHandler(request, 
-							out, Java7AsyncServer.virtualHosts);
+			            InetAddress remoteAddr = ((InetSocketAddress)toHandle.getLocalAddress()).getAddress();
+			            InetAddress serverAddr = ((InetSocketAddress)toHandle.getLocalAddress()).getAddress();
+			            int port = Java7AsyncServer.DEFAULT_PORT;
+						AsyncWebRequestHandler a =  new AsyncWebRequestHandler(remoteAddr, serverAddr, port,
+							request, out, Java7AsyncServer.virtualHosts);
 						setRequestHandler(a);
 						a.processRequest();
 

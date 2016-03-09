@@ -36,6 +36,10 @@ class WebRequestHandler {
     boolean isLoadBalancing = false;
     boolean usingMobile;
 
+    InetAddress remoteAddress;
+    InetAddress serverAddress;
+    int port;
+
 
     public WebRequestHandler(Socket connectionSocket, 
         ServerSocket listenSocket, 
@@ -48,6 +52,16 @@ class WebRequestHandler {
         this.connSocket = connectionSocket;
 
         this.listenSocket = listenSocket;
+
+        if (connectionSocket != null)
+            this.remoteAddress = connectionSocket.getInetAddress();
+
+        if (listenSocket != null){
+            this.serverAddress = listenSocket.getInetAddress();
+            this.port = listenSocket.getLocalPort();
+        }
+        
+
 
         if(connectionSocket != null){
             inFromClient =
@@ -291,7 +305,7 @@ class WebRequestHandler {
             env.put("QUERY_STRING", QUERY_STRING);
         }
 
-        setEnvironmentVariables(connSocket, listenSocket, env);
+        setEnvironmentVariables(env);
 
         // funnel into the pipe 1024 bytes at a time
         InputStream procOut = pb.start().getInputStream();
@@ -339,18 +353,14 @@ class WebRequestHandler {
         }
     }
 
-    public void setEnvironmentVariables(Socket connectionSocket, 
-        ServerSocket serverSocket, Map<String, String> env){
+    public void setEnvironmentVariables(Map<String, String> env){
 
-        InetAddress remote = connectionSocket.getInetAddress();
-        InetAddress server = serverSocket.getInetAddress();
-
-        String REMOTE_ADDR = remote.getHostAddress();
-        String REMOTE_HOST = remote.getHostName();
+        String REMOTE_ADDR = remoteAddress.getHostAddress();
+        String REMOTE_HOST = remoteAddress.getHostName();
         
         String REQUEST_METHOD = "GET";
-        String SERVER_NAME = server.getHostAddress();
-        String SERVER_PORT = serverSocket.getLocalPort() + "";
+        String SERVER_NAME = serverAddress.getHostAddress();
+        String SERVER_PORT = port + "";
         String SERVER_PROTOCOL = "HTTP/1.0";
 
         // ignore the following env variables (application specific)

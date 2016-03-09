@@ -1,6 +1,7 @@
 import java.nio.*;
 import java.nio.channels.*;
 import java.io.IOException;
+import java.net.*;
 
 public class ReadWriteHandler implements IReadWriteHandler {
 
@@ -191,9 +192,10 @@ public class ReadWriteHandler implements IReadWriteHandler {
     // handle a web-request
     private void generateResponse(SocketChannel client) throws IOException {
         try{
-            asyncHandler = new AsyncWebRequestHandler(client.socket(), 
-                AsyncServer.serverChannel.socket(), request, outBuffer, 
-                AsyncServer.virtualHosts);
+            InetAddress remoteAddr = ((InetSocketAddress)client.getRemoteAddress()).getAddress(); 
+            InetAddress serverAddr = ((InetSocketAddress)AsyncServer.serverChannel.getLocalAddress()).getAddress();
+            asyncHandler = new AsyncWebRequestHandler(remoteAddr, serverAddr, 
+                AsyncServer.DEFAULT_PORT, request, outBuffer, AsyncServer.virtualHosts);
             asyncHandler.processRequest();
             outBuffer.flip();
             responseReady = true;
