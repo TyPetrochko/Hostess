@@ -233,7 +233,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         }else{
             isExecutable = false;
         }
-
         int fileSize = (int) fileInfo.length();
         writer.append("Content-Length: " + fileSize + "\r\n");
         writer.append("\r\n");
@@ -272,6 +271,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             }
 
             outBuff.put(fileInBytes);
+            fileStream.close();
             doneProcessing = true;
         }
     }
@@ -300,6 +300,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             byte[] fileInBytes = new byte[fileSize - (int)progress];
             fileStream.read(fileInBytes);
             outBuff.put(fileInBytes);
+            fileStream.close();
             doneProcessing = true;
         }
 

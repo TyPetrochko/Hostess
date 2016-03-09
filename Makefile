@@ -29,10 +29,10 @@ test-suspension: server
 test-client: client
 	java SHTTPTestClient -server tick.zoo.cs.yale.edu -servname test -port 6789 -parallel 100 -files data/filelist -T 10
 
-test-async: async
+test-async: 
 	java AsyncServer -config data/config.conf
 
-test-java7: java7
+test-java7: 
 	java Java7AsyncServer -config data/config.conf
 
 load-balancer: ILoadBalancer.java MyLoadBalancer.java
