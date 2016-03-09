@@ -28,10 +28,11 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     InputStream cgiInput;
     long cgiBytesRead;
 
-    public AsyncWebRequestHandler(StringBuffer inBuff, ByteBuffer outBuff,
-                 List<VirtualHost> virtualHosts) throws Exception
+    public AsyncWebRequestHandler(Socket connSocket, ServerSocket listenSocket, 
+        StringBuffer inBuff, ByteBuffer outBuff, 
+        List<VirtualHost> virtualHosts) throws Exception
     {
-        super(null, virtualHosts);
+        super(connSocket, listenSocket, virtualHosts);
 
         this.inBuff = inBuff;
         this.outBuff = outBuff;
@@ -291,6 +292,8 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             env.put("QUERY_STRING", QUERY_STRING);
         }
 
+        setEnvironmentVariables(connSocket, listenSocket, env);
+
         flushWriter();
 
         // funnel into the pipe 1024 bytes at a time
@@ -307,7 +310,6 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 return;
             }else{
                 outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
-                System.out.println("Put");
             }
         }
         doneProcessing = true;

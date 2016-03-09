@@ -48,7 +48,7 @@ public class SuspensionServiceThread extends Thread {
 	        }
 
 	        try{
-				WebRequestHandler wrh = new WebRequestHandler( s, virtualHosts );
+				WebRequestHandler wrh = new WebRequestHandler( s, WebServer.listenSocket, virtualHosts );
 				wrh.processRequest();
 
 			}catch (Exception e){

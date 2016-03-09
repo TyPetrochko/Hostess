@@ -183,16 +183,17 @@ public class ReadWriteHandler implements IReadWriteHandler {
         inBuffer.clear(); // we do not keep things in the inBuffer
         
         if (requestComplete) {
-            generateResponse();
+            generateResponse(client);
         }
 
     } // end of process input
 
     // handle a web-request
-    private void generateResponse() throws IOException {
+    private void generateResponse(SocketChannel client) throws IOException {
         try{
-            asyncHandler = new AsyncWebRequestHandler(request, 
-                outBuffer, AsyncServer.virtualHosts);
+            asyncHandler = new AsyncWebRequestHandler(client.socket(), 
+                AsyncServer.serverChannel.socket(), request, outBuffer, 
+                AsyncServer.virtualHosts);
             asyncHandler.processRequest();
             outBuffer.flip();
             responseReady = true;

@@ -19,6 +19,7 @@ class WebRequestHandler {
     String WWW_ROOT;
     String QUERY_STRING;
     String serverName;
+    ServerSocket listenSocket;
     Socket connSocket;
     List<VirtualHost> virtualHosts;
     BufferedReader inFromClient;
@@ -37,13 +38,16 @@ class WebRequestHandler {
 
 
     public WebRequestHandler(Socket connectionSocket, 
-                 List<VirtualHost> virtualHosts) throws Exception
+        ServerSocket listenSocket, 
+        List<VirtualHost> virtualHosts) throws Exception
     {
         reqCount ++;
 
         this.virtualHosts = virtualHosts;
 
         this.connSocket = connectionSocket;
+
+        this.listenSocket = listenSocket;
 
         if(connectionSocket != null){
             inFromClient =
@@ -287,6 +291,8 @@ class WebRequestHandler {
             env.put("QUERY_STRING", QUERY_STRING);
         }
 
+        setEnvironmentVariables(connSocket, listenSocket, env);
+
         // funnel into the pipe 1024 bytes at a time
         InputStream procOut = pb.start().getInputStream();
         byte[] buffer = new byte[1024];
@@ -331,6 +337,35 @@ class WebRequestHandler {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void setEnvironmentVariables(Socket connectionSocket, 
+        ServerSocket serverSocket, Map<String, String> env){
+
+        InetAddress remote = connectionSocket.getInetAddress();
+        InetAddress server = serverSocket.getInetAddress();
+
+        String REMOTE_ADDR = remote.getHostAddress();
+        String REMOTE_HOST = remote.getHostName();
+        
+        String REQUEST_METHOD = "GET";
+        String SERVER_NAME = server.getHostAddress();
+        String SERVER_PORT = serverSocket.getLocalPort() + "";
+        String SERVER_PROTOCOL = "HTTP/1.0";
+
+        // ignore the following env variables (application specific)
+        //String REMOTE_IDENT;
+        //String REMOTE_USER;
+        //String SERVER_SOFTWARE;
+        
+
+        env.put("REMOTE_ADDR", REMOTE_ADDR);
+        env.put("REMOTE_HOST", REMOTE_HOST);
+        env.put("REQUEST_METHOD", REQUEST_METHOD);
+        env.put("SERVER_NAME", SERVER_NAME);
+        env.put("SERVER_PORT", SERVER_PORT);
+        env.put("SERVER_PROTOCOL", SERVER_PROTOCOL);
+
     }
 
     static void DEBUG(String s) 

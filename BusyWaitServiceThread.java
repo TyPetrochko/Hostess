@@ -39,7 +39,7 @@ public class BusyWaitServiceThread extends Thread {
 	        } // end while
 	        try{
 	        	WebServer.numUsers++;
-				WebRequestHandler wrh = new WebRequestHandler( s, virtualHosts );
+				WebRequestHandler wrh = new WebRequestHandler( s, WebServer.listenSocket, virtualHosts );
 				wrh.processRequest();
 			}catch (Exception e){
 				e.printStackTrace();

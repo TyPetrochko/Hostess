@@ -103,8 +103,7 @@ class WebServer{
 		
 			    // process a request
 			    WebRequestHandler wrh = 
-			        new WebRequestHandler( connectionSocket, virtualHosts );
-
+			        new WebRequestHandler( connectionSocket, listenSocket, virtualHosts );
 			    wrh.processRequest();
 
 		    } catch (Exception e){

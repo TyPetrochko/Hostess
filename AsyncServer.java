@@ -9,8 +9,9 @@ public class AsyncServer {
     public static long INCOMPLETE_TIMEOUT = 3000;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
 
+    public static ServerSocketChannel serverChannel;
+
     public static ServerSocketChannel openServerChannel(int port) {
-        ServerSocketChannel serverChannel = null;
         try {
             // open server socket for accept
             serverChannel = ServerSocketChannel.open();

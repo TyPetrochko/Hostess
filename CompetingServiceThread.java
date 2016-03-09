@@ -36,7 +36,7 @@ public class CompetingServiceThread extends Thread {
 	        } // end of extract a request
 
 	        try{
-				WebRequestHandler wrh = new WebRequestHandler( s, virtualHosts );
+				WebRequestHandler wrh = new WebRequestHandler( s, WebServer.listenSocket, virtualHosts );
 				wrh.processRequest();
 			}catch (Exception e){
 				e.printStackTrace();

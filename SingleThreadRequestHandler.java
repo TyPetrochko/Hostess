@@ -21,8 +21,7 @@ class SingleThreadRequestHandler extends Thread{
 		try{
 			WebServer.numUsers ++;
 			WebRequestHandler wrh = 
-			        new WebRequestHandler( socket, virtualHosts );
-
+			        new WebRequestHandler( socket, WebServer.listenSocket, virtualHosts );
 		    wrh.processRequest();
 		    WebServer.numUsers --;
 		}catch (Exception e){
