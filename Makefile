@@ -12,7 +12,7 @@ client: SHTTPTestClient.java
 	javac $^
 
 test-sequential: server
-	java WebServer sequential -config data/config.conf
+	java -Xprof WebServer sequential -config data/config.conf
 
 test-req: server
 	java WebServer per-request-thread -config data/config.conf
@@ -27,7 +27,16 @@ test-suspension: server
 	java WebServer suspension -config data/config.conf
 
 test-client: client
-	java SHTTPTestClient -server tick.zoo.cs.yale.edu -servname test -port 6789 -parallel 100 -files data/filelist -T 10
+	java SHTTPTestClient -server peacock.zoo.cs.yale.edu -servname test -port 6789 -parallel 100 -files data/filelist -T 10
+
+test-local: client
+	java SHTTPTestClient -server localhost -servname test -port 6789 -parallel 5 -files data/filelist -T 10
+
+test-lee: client
+	java SHTTPTestClient -server peacock.zoo.cs.yale.edu -servname peacock.zoo.cs.yale.edu -port 6755 -parallel 10 -files data/filelist -T 5
+
+test-alan: client
+	java SHTTPTestClient -server 128.36.232.18 -servname zoo -port 3000 -parallel 10 -files data/filelist -T 10
 
 test-async: 
 	java AsyncServer -config data/config.conf

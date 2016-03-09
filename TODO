@@ -1,6 +1,7 @@
 9) Add Async cache
 10) Start debugging grind
 11) Is there an async loadbalancer?
+12) Fix client
 
 housekeeping stuff:
 - clean up code, remove comments

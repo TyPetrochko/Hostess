@@ -11,7 +11,8 @@ class SHTTPTestClient{
 	public static int threads;
 	public static String fileList;
 	public static double testingTime;
-	public static List<String> files;
+	//public static List<String> files;
+	public static String[] files;
 
 
 	public static void main (String [] args){
@@ -32,6 +33,7 @@ class SHTTPTestClient{
 		}
 
 		try{
+			Thread.sleep((long)(testingTime*1000));
 			for (Thread t : threadList){
 				t.join();
 			}
@@ -39,11 +41,14 @@ class SHTTPTestClient{
 			e.printStackTrace();
 		}
 
+		
+
 		System.out.println("Total number of files downloaded: " + Tester.totalFilesDownloaded.get());
 		System.out.println("Total number of files downloaded/sec: " + (Tester.totalFilesDownloaded.get() / (testingTime)));
 		System.out.println("Average wait time/download (ms): " + (Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
 		float mbps = (float)(Tester.totalBytesDownloaded.get() / (testingTime * 1000000));
 		System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
+		System.out.println("Bytes per second: " + (Tester.totalBytesDownloaded.get() / testingTime));
 	} // end main
 
 	public static void printUsage(){
@@ -75,19 +80,20 @@ class SHTTPTestClient{
 		}
 
 		// Read in files to download
-		files = new ArrayList<String>();
+		ArrayList<String> filesArrayList = new ArrayList<String>();
 		try(BufferedReader br = new BufferedReader(new FileReader(fileList))) {
 		    String line = br.readLine();
 
 		    while (line != null) {
 		    	if(line.trim() != ""){
-			        files.add(line);
+			        filesArrayList.add(line);
 			        line = br.readLine();
 		    	}
 		    }
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		files = filesArrayList.toArray(new String[filesArrayList.size()]);
 	}
 }
 
@@ -175,6 +181,8 @@ class Tester implements Runnable{
 						line = inReader.readLine();
 					}
 					numFilesDownloaded++;
+
+					socket.close();
 				} // end for-loop over files
 			} // end timer while-loop
 
