@@ -47,6 +47,9 @@ test-java7:
 test-apache:
 	java SHTTPTestClient -server zoo.cs.yale.edu -servname zoo -port 80 -parallel 5 -files data/list1 -T 10
 
+test-like-apache:
+	java SHTTPTestClient -server peacock.zoo.cs.yale.edu -servname zoo -port 6789 -parallel 50 -files data/list1 -T 10
+
 load-balancer: ILoadBalancer.java MyLoadBalancer.java
 	javac $^
 
