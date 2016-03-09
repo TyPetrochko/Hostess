@@ -82,7 +82,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             outputError(400, "Server error");
             System.out.println("We encountered error but we're done processing!");
             doneProcessing = true;
-            //e.printStackTrace();
+            e.printStackTrace();
         }
 
         flushWriter();
@@ -242,7 +242,8 @@ class AsyncWebRequestHandler extends WebRequestHandler {
     
         // send file content
         fileStream  = new FileInputStream (fileName);
-    
+
+        // only cache files small enough to cache
         if(fileSize > outBuff.remaining()){
             System.out.println("Not done yet");
             byte [] batch = new byte[outBuff.remaining()];
@@ -251,9 +252,25 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             doneProcessing = false;
             progress += batch.length;
         }else{
-            System.out.println("Done!");
-            byte[] fileInBytes = new byte[fileSize];
-            fileStream.read(fileInBytes);
+            // we want to check cache first
+            byte[] fileInBytes;
+            if(FileCache.globalCache.hasFile(fileName) && FileCache.globalCache
+                .cachedTimeMillis(fileName) > fileInfo.lastModified()){
+                // cache hit
+                System.out.println("Cache hit!");
+                fileInBytes = FileCache.globalCache.getFile(fileName);
+            }
+            else {
+                // cache miss; read in file
+                System.out.println("Cache miss :(");
+                FileInputStream fileStream  = new FileInputStream (fileName);
+                fileInBytes = new byte[fileSize];
+                fileStream.read(fileInBytes);
+
+                // cache result
+                FileCache.globalCache.cacheIfPossible(fileName, fileInBytes);
+            }
+
             outBuff.put(fileInBytes);
             doneProcessing = true;
         }

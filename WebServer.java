@@ -13,7 +13,6 @@ class WebServer{
     public static int serverPort = 6789;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
     public static ServerSocket listenSocket = null;
-    public static FileCache cache = null;
     public static String WWW_ROOT = "./";
     public static int threadPoolSize = 1;
     public static int cacheSize = 0;
@@ -82,8 +81,8 @@ class WebServer{
     	// create server socket
 		listenSocket = new ServerSocket(serverPort);
 
-		// create cache
-		cache = new FileCache(cacheSize);
+		// create cache singleton
+		new FileCache(cacheSize);
 
 
 		// list all listening hosts

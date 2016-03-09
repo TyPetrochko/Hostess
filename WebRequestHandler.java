@@ -279,18 +279,21 @@ class WebRequestHandler {
 
         // look in cache, else read from file
         byte[] fileInBytes;
-        if(WebServer.cache.hasFile(fileName) && WebServer.cache
+        if(FileCache.globalCache.hasFile(fileName) && FileCache.globalCache
             .cachedTimeMillis(fileName) > fileInfo.lastModified()){
-            fileInBytes = WebServer.cache.getFile(fileName);
+            // cache hit
+            System.out.println("Cache hit!");
+            fileInBytes = FileCache.globalCache.getFile(fileName);
         }
-        else { // cache miss
-            // read in file
+        else {
+            // cache miss
+            System.out.println("Cache miss :(");
             FileInputStream fileStream  = new FileInputStream (fileName);
             fileInBytes = new byte[numOfBytes];
             fileStream.read(fileInBytes);
 
             // cache result
-            WebServer.cache.cacheIfPossible(fileName, fileInBytes);
+            FileCache.globalCache.cacheIfPossible(fileName, fileInBytes);
         }
 
         outToClient.write(fileInBytes, 0, numOfBytes);

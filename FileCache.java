@@ -9,9 +9,14 @@ class FileCache {
     private long cacheSize;
     private long cacheCapacity;
 
+    public static FileCache globalCache;
+
     public FileCache(long capacity){
-    	cache = new ConcurrentHashMap<String, FileWithTimestamp>();
-    	cacheCapacity = capacity;
+        if(globalCache == null){
+        	cache = new ConcurrentHashMap<String, FileWithTimestamp>();
+        	cacheCapacity = capacity;
+            globalCache = this;
+        }
     }
 
     public boolean cacheIfPossible(String fileName, 

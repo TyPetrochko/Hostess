@@ -8,12 +8,14 @@ import java.nio.*;
 public class Java7AsyncServer{
 	public static int DEFAULT_PORT = 6789;
     public static long INCOMPLETE_TIMEOUT = 3000;
+
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
 
     public static AsynchronousServerSocketChannel serverSocket;
-
+	
+	public static long cacheSize = 8000;
+    
     public static AsynchronousServerSocketChannel openServerChannel(int port) {
-
     	// open a new async server socket
     	AsynchronousServerSocketChannel toReturn = null;
     	try{
@@ -34,6 +36,9 @@ public class Java7AsyncServer{
         // open server socket on port
         System.out.println("Opening server on port " + DEFAULT_PORT);
         serverSocket = openServerChannel(DEFAULT_PORT);
+
+        // make a new file cache singleton
+        new FileCache(cacheSize);
 
         // set up async callback for accepting a new client
     	serverSocket.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
@@ -79,6 +84,8 @@ public class Java7AsyncServer{
                 if(cp.incompleteTimeout != -1.0f){
                     INCOMPLETE_TIMEOUT = (long) (cp.incompleteTimeout * 1000);
                 }
+                if(cp.cacheSize != -1)
+                    cacheSize = cp.cacheSize;
             }catch(Exception e){
                 System.out.println("Could not load configurations: " + args[1]);
                 e.printStackTrace();

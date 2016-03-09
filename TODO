@@ -1,7 +1,14 @@
 9) Add Async cache
 10) Start debugging grind
+11) Is there an async loadbalancer?
 
 housekeeping stuff:
 - clean up code, remove comments
 - rename "DEFAULT_PORT" to "PORT"
 - make sure that requests to missing files are handled gracefully
+- make sure it runs without a config file
+- make sure virtualhosts still work
+
+Speedup parameters:
+ - make a larger cache
+ - use larger bytebuffers for async files

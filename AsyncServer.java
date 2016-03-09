@@ -10,6 +10,7 @@ public class AsyncServer {
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
 
     public static ServerSocketChannel serverChannel;
+    public static int cacheSize = 8000;
 
     public static ServerSocketChannel openServerChannel(int port) {
         try {
@@ -47,6 +48,8 @@ public class AsyncServer {
                     INCOMPLETE_TIMEOUT = (long) (cp.incompleteTimeout * 1000);
                     System.out.println("Timeout specified: " + INCOMPLETE_TIMEOUT);
                 }
+                if(cp.cacheSize != -1)
+                    cacheSize = cp.cacheSize;
             }catch(Exception e){
                 System.out.println("Could not load configurations: " + args[1]);
                 e.printStackTrace();
@@ -71,9 +74,14 @@ public class AsyncServer {
         ISocketReadWriteHandlerFactory echoFactory = new ReadWriteHandlerFactory();
         Acceptor acceptor = new Acceptor(echoFactory);
 
+        // init dispatcher
         Thread dispatcherThread;
-        // register the server channel to a selector
+
+        // make a file cache (singleton)
+        FileCache globalCache = new FileCache(cacheSize);
+
         try {
+            // make a selection key for acceptor
             SelectionKey key = sch.register(dispatcher.selector(), SelectionKey.OP_ACCEPT);
             key.attach(acceptor);
             
