@@ -245,6 +245,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         write("\r\n");
 
         // only cache files small enough to cache
+        fileStream  = new FileInputStream (fileName);
         if(fileSize > outBuff.remaining()){
             Debug.DEBUG("Not done yet");
             byte [] batch = new byte[outBuff.remaining()];
@@ -264,7 +265,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             else {
                 // cache miss; read in file
                 Debug.DEBUG("Cache miss :(");
-                FileInputStream fileStream  = new FileInputStream (fileName);
+                
                 fileInBytes = new byte[fileSize];
                 fileStream.read(fileInBytes);
                 fileStream.close();
