@@ -7,8 +7,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
+//import java.time.*;
+//import java.time.format.DateTimeFormatter;
 
 
 class WebRequestHandler {
@@ -29,8 +29,8 @@ class WebRequestHandler {
     String fileName;
     File fileInfo;
 
-    ZonedDateTime ifModifiedSince;
-    ZonedDateTime lastModifiedZdt;
+    //ZonedDateTime ifModifiedSince;
+    //ZonedDateTime lastModifiedZdt;
 
     boolean isExecutable;
     boolean isLoadBalancing = false;
@@ -82,18 +82,20 @@ class WebRequestHandler {
         if ( fileInfo != null ) // found the file and knows its info
         {
             // find out when file last modified
+            /*
             long lastModified = fileInfo.lastModified();
             Instant instant = Instant.ofEpochMilli(lastModified);
             lastModifiedZdt = ZonedDateTime.ofInstant(instant , 
                 ZoneId.of("GMT"));
+            */
 
             // if checking "if-modified-since", we may want to just notify
             if (isLoadBalancing){
                 loadBalance();
-            }else if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
+            }/*else if(ifModifiedSince != null && ifModifiedSince.compareTo(lastModifiedZdt) > 0){
                 outputNotModified();
                 return;
-            }else{
+            }*/else{
                 outputResponseHeader();
                 outputResponseBody();
             }
@@ -165,7 +167,7 @@ class WebRequestHandler {
 
         // Parse all headers, line by line
         String line = inFromClient.readLine();
-        ifModifiedSince = null;
+        //ifModifiedSince = null;
         while (line != null && !line.equals("") ) {
             
             // separate line by first space
@@ -191,11 +193,11 @@ class WebRequestHandler {
             }else if (tokens.length >= 2 && tokens[0].equals("If-Modified-Since:")){
                 // try to parse if-modified-since date
                 try{
-                    ifModifiedSince = LocalDateTime.parse(remaining, 
-                        DateTimeFormatter.RFC_1123_DATE_TIME).atZone(ZoneId.of("GMT"));
+                    //ifModifiedSince = LocalDateTime.parse(remaining, 
+                    //    DateTimeFormatter.RFC_1123_DATE_TIME).atZone(ZoneId.of("GMT"));
                 }catch(Exception e){
-                    ifModifiedSince = null; // couldn't parse it
-                    Debug.DEBUG("Couldn't parse datetime: " + remaining);
+                    //ifModifiedSince = null; // couldn't parse it
+                    //Debug.DEBUG("Couldn't parse datetime: " + remaining);
                 }
             }else if (tokens.length >= 2 && tokens[0].equals("User-Agent:")){
 
@@ -242,15 +244,15 @@ class WebRequestHandler {
     private void outputResponseHeader() throws Exception 
     {
         outToClient.writeBytes("HTTP/1.0 200 Document Follows\r\n");
-        outToClient.writeBytes("Date: " + DateTimeFormatter.RFC_1123_DATE_TIME
-            .format(ZonedDateTime.now(ZoneId.of("GMT"))) + "\r\n");
+        //outToClient.writeBytes("Date: " + DateTimeFormatter.RFC_1123_DATE_TIME
+        //    .format(ZonedDateTime.now(ZoneId.of("GMT"))) + "\r\n");
 
         if(serverName != null){
             outToClient.writeBytes("Server: " + serverName + "\r\n");
         }
 
-        outToClient.writeBytes("Last-Modified: " + DateTimeFormatter
-            .RFC_1123_DATE_TIME.format(lastModifiedZdt) + "\r\n");
+        //outToClient.writeBytes("Last-Modified: " + DateTimeFormatter
+        //    .RFC_1123_DATE_TIME.format(lastModifiedZdt) + "\r\n");
 
         if (urlName.endsWith(".jpg"))
             outToClient.writeBytes("Content-Type: image/jpeg\r\n");
