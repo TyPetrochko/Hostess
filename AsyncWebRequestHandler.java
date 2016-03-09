@@ -245,8 +245,10 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         write("\r\n");
 
         // only cache files small enough to cache
-        fileStream  = new FileInputStream (fileName);
+        
         if(fileSize > outBuff.remaining()){
+            if (fileStream == null)
+                fileStream  = new FileInputStream (fileName);
             Debug.DEBUG("Not done yet");
             byte [] batch = new byte[outBuff.remaining()];
             fileStream.read(batch);
@@ -256,6 +258,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         }else{
             // we want to check cache first
             byte[] fileInBytes;
+            fileStream  = new FileInputStream (fileName);
             if(FileCache.globalCache.hasFile(fileName) && FileCache.globalCache
                 .cachedTimeMillis(fileName) > fileInfo.lastModified()){
                 // cache hit

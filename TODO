@@ -3,6 +3,7 @@
 11) Is there an async loadbalancer?
 12) Fix client
 13) Errors on client testing with sequential server
+14) Fix error with too many filestreams being created
 
 housekeeping stuff:
 - clean up code, remove comments
