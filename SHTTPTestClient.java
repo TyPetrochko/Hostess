@@ -80,7 +80,7 @@ class SHTTPTestClient{
 		// return metrics
 		float [] metrics = new float[2];
 		metrics[0] = (float) mbps;
-		metrics[1] = (float) (Tester.totalWaitTime.get() / Tester.totalNumWaits.get());
+		metrics[1] = (float) (actualTestTime / Tester.totalNumWaits.get());
 		return metrics;
 	} // end main
 
@@ -276,8 +276,7 @@ class Tester implements Runnable{
 						try{
 							socket.close();
 						} catch (Exception ee){
-							System.err.println("Couldn't close socket");
-							ee.printStackTrace();
+							System.err.println("Couldn't close socket - halting test");
 							return;
 						}
 
