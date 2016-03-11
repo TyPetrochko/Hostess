@@ -167,15 +167,16 @@ class Tester implements Runnable{
 
 				// iterate over all files
 				for(String file : SHTTPTestClient.files){
+					// Don't go over alotted time
+					if(System.currentTimeMillis() >= endTime){
+						break;
+					}
 					try{
-						// Don't go over alotted time
-						if(System.currentTimeMillis() >= endTime){
-							break;
-						}
 
 						// Make a new socket with reader/writer
-						socket = new Socket(SHTTPTestClient.server, SHTTPTestClient.port);
-						socket.setSoTimeout(1000);
+						socket = new Socket();
+						socket.connect(new InetSocketAddress(SHTTPTestClient.server, 
+							SHTTPTestClient.port), 1000);
 						
 						// get ready to write request
 						Writer outWriter = new OutputStreamWriter(socket.getOutputStream(), 
