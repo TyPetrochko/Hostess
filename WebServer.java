@@ -97,7 +97,6 @@ class WebServer{
 		    try {
 			    // take a ready connection from the accepted queue
 			    Socket connectionSocket = listenSocket.accept();
-			    connectionSocket.setSoTimeout(1000);
 			    Debug.DEBUG("\nReceive request from " + connectionSocket);
 		
 			    // process a request

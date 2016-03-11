@@ -101,8 +101,7 @@ class WebRequestHandler {
 
         
     } catch (Exception e) {
-        System.err.println("Encountered error, sending report and closing socket");
-        e.printStackTrace();
+        // swallow error - client timed out
         outputError(400, "Server error");
     } finally {
         try{
@@ -305,12 +304,8 @@ class WebRequestHandler {
             FileCache.globalCache.cacheIfPossible(fileName, fileInBytes);
         }
 
-        try{
-            outToClient.write(fileInBytes, 0, numOfBytes);
-        }catch(Exception e){
-            // client timed out, swallow error
-            throw e;
-        }
+        outToClient.write(fileInBytes, 0, numOfBytes);
+        
     }
 
     private void runCGI() throws Exception{
