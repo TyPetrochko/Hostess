@@ -6,16 +6,16 @@ public class ProjectTester {
 
 		new SHTTPTestClient();
 
-		System.out.printf("%10s, %10s\n", "Threads", "MB/s");
+		System.out.printf("%15s %15s %15s\n", "Threads", "MB/s", "Mean Delay");
 
 		for (int i = 0; i < 16; i ++){
 			String [] argsx = {"-server", args[0], "-servname", args[1], "-port", args[2],
 				"-parallel", parallelSchedule[i] + "", "-files", 
 			args[3], "-T", args[4]};
 
-			float mbps = SHTTPTestClient.configAndRun(argsx, false);
+			float [] metrics = SHTTPTestClient.configAndRun(argsx, false);
 
-			System.out.printf("%10d %10f\n", parallelSchedule[i], mbps);
+			System.out.printf("%15d %15f %15f \n", parallelSchedule[i], metrics[0], metrics[1]);
 			SHTTPTestClient.clearVars();
 		}
 	}

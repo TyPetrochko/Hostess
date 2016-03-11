@@ -27,7 +27,6 @@ public class TimeoutThread extends Thread {
 		while(true){
 			try{
 				Thread.sleep(500);
-				break;
 			} catch (Exception e){
 				System.out.println("Couldn't fall asleep");
 				e.printStackTrace();

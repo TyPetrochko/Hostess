@@ -18,11 +18,11 @@ class SHTTPTestClient{
 		configAndRun(args, true);
 	}
 
-	public static float configAndRun(String [] args, boolean shouldPrint){
+	public static float[] configAndRun(String [] args, boolean shouldPrint){
 		// Correct # of args?
 		if(args.length != 12){
 			printUsage();
-			return -1.0f;
+			return new float[2];
 		}
 
 		// Get command line args
@@ -40,7 +40,7 @@ class SHTTPTestClient{
 	}
 
 	// perform benchmarking
-	public static float runTest(boolean print){
+	public static float [] runTest(boolean print){
 		Thread[] threadList = new Thread[threads];
 		for(int i = 0; i < threads; i++){
 			threadList[i] = new Thread(new Tester(testingTime));
@@ -76,8 +76,12 @@ class SHTTPTestClient{
 				+ (Tester.totalBytesDownloaded.get() / actualTestTime));
 			System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
 		}
-		
-		return mbps;
+
+		// return metrics
+		float [] metrics = new float[2];
+		metrics[1] = (float) mbps;
+		metrics[2] = (float) (Tester.totalWaitTime.get() / Tester.totalNumWaits.get());
+		return metrics;
 	} // end main
 
 	public static void printUsage(){
@@ -274,6 +278,7 @@ class Tester implements Runnable{
 						} catch (Exception ee){
 							System.err.println("Couldn't close socket");
 							ee.printStackTrace();
+							return;
 						}
 
 					}
