@@ -12,7 +12,7 @@ client: SHTTPTestClient.java
 	javac $^
 
 test-sequential: server
-	java -Xprof WebServer sequential -config data/config.conf
+	java WebServer sequential -config data/config.conf
 
 test-req: server
 	java WebServer per-request-thread -config data/config.conf
