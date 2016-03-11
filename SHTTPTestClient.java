@@ -171,7 +171,7 @@ class Tester implements Runnable{
 
 						// Make a new socket with reader/writer
 						socket = new Socket(SHTTPTestClient.server, SHTTPTestClient.port);
-						socket.setSoTimeout((int)(SHTTPTestClient.testingTime * 1000));
+						socket.setSoTimeout(1000);
 						
 						// get ready to write request
 						Writer outWriter = new OutputStreamWriter(socket.getOutputStream(), 
