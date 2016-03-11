@@ -31,6 +31,14 @@ class SHTTPTestClient{
 		return runTest(shouldPrint);
 	}
 
+	public static void clearVars(){
+		Tester.totalFilesDownloaded = new AtomicInteger(0);
+		Tester.totalBytesDownloaded = new AtomicLong(0);
+		Tester.totalNumWaits = new AtomicLong(0);
+		Tester.totalWaitTime = new AtomicLong(0);
+		Tester.totalDownloadTime = new AtomicLong(0);
+	}
+
 	// perform benchmarking
 	public static float runTest(boolean print){
 		Thread[] threadList = new Thread[threads];

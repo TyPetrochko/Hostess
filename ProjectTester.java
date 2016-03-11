@@ -16,6 +16,7 @@ public class ProjectTester {
 			float mbps = SHTTPTestClient.configAndRun(argsx, false);
 
 			System.out.printf("%10d %10f\n", parallelSchedule[i], mbps);
+			SHTTPTestClient.clearVars();
 		}
 	}
 }
