@@ -37,7 +37,6 @@ test-lee: client
 
 test-alan: client
 	java SHTTPTestClient -server 128.36.232.18 -servname zoo -port 3000 -parallel 30 -files data/filelist -T 10
-
 test-async: 
 	java AsyncServer -config data/config.conf
 
@@ -58,6 +57,21 @@ project-tester: client
 
 test-project:
 	java ProjectTester peacock.zoo.cs.yale.edu zoo 6789 data/list1 5
+
+jarify:
+	rm -f *.jar
+	jar cfe Server.jar WebServer WebServer.class WebRequestHandler.class SingleThreadRequestHandler.class ConfigParser.class VirtualHost.class CompetingServiceThread.class BusyWaitServiceThread.class SuspensionServiceThread.class ILoadBalancer.class MyLoadBalancer.class LoadBalancer.class Debug.class FileCache.class FileWithTimestamp.class
+	rm -f *.jar
+	jar cfe Server.jar WebServer *.class
+	jar cfe AsyncServer.jar AsyncServer *.class
+	jar cfe Java7AsyncServer.jar Java7AsyncServer *.class
+
+jar-async:
+	java -jar Java7AsyncServer.jar -config data/config.conf
+
+jar-suspension:
+	java -jar Server.jar suspension -config data/config.conf
+
 
 clean:
 	rm *.class
