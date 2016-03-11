@@ -1,7 +1,3 @@
-9) Add Async cache
-10) Start debugging grind
-11) Is there an async loadbalancer?
-12) Fix client
 13) Errors on client testing with sequential server
 14) Fix error with too many filestreams being created
 

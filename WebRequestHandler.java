@@ -296,7 +296,12 @@ class WebRequestHandler {
             FileCache.globalCache.cacheIfPossible(fileName, fileInBytes);
         }
 
-        outToClient.write(fileInBytes, 0, numOfBytes);
+        try{
+            outToClient.write(fileInBytes, 0, numOfBytes);
+        catch(Exception e){
+            System.err.println("Couldn't write to client");
+            throw e;
+        }
     }
 
     private void runCGI() throws Exception{

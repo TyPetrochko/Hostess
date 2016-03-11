@@ -134,7 +134,7 @@ class Tester implements Runnable{
 
 					// Make a new socket with reader/writer
 					socket = new Socket(SHTTPTestClient.server, SHTTPTestClient.port);
-					socket.setSoTimeout((int)(SHTTPTestClient.testingTime * 1000));
+					//socket.setSoTimeout((int)(SHTTPTestClient.testingTime * 1000));
 					Writer outWriter = new OutputStreamWriter(socket.getOutputStream(), 
 						"US-ASCII");
 					BufferedReader inReader = new BufferedReader(
