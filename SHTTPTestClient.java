@@ -41,11 +41,14 @@ class SHTTPTestClient{
 			e.printStackTrace();
 		}
 
+		double actualTestTime = ((double) Tester.totalDownloadTime.get() / 1000) / (double)threads;
+
+		System.out.println("Actual test time: " + actualTestTime);
 		System.out.println("Total number of files downloaded: " + Tester.totalFilesDownloaded.get());
-		System.out.println("Total number of files downloaded/sec: " + (Tester.totalFilesDownloaded.get() / (testingTime)));
+		System.out.println("Total number of files downloaded/sec: " + (Tester.totalFilesDownloaded.get() / (actualTestTime)));
 		System.out.println("Average wait time/download (ms): " + (Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
-		float mbps = (float)(Tester.totalBytesDownloaded.get() / (testingTime * 1000000));
-		System.out.println("Average bytes downloaded/sec: " + (Tester.totalBytesDownloaded.get() / testingTime));
+		float mbps = (float)(Tester.totalBytesDownloaded.get() / (actualTestTime * 1000000));
+		System.out.println("Average bytes downloaded/sec: " + (Tester.totalBytesDownloaded.get() / actualTestTime));
 		System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
 		
 	} // end main
@@ -108,6 +111,7 @@ class Tester implements Runnable{
 	static AtomicLong totalBytesDownloaded = new AtomicLong(0);
 	static AtomicLong totalNumWaits = new AtomicLong(0);
 	static AtomicLong totalWaitTime = new AtomicLong(0);
+	static AtomicLong totalDownloadTime = new AtomicLong(0);
 
 	public Tester(double timeToRun){
 		this.timeToRun = timeToRun;
@@ -207,10 +211,14 @@ class Tester implements Runnable{
 				} // end for-loop over files
 			} // end timer while-loop
 
+
+			endTime = System.currentTimeMillis() ;
+
 			totalFilesDownloaded.addAndGet(numFilesDownloaded);
 			totalWaitTime.addAndGet(waitTime);
 			totalNumWaits.addAndGet(numWaits);
 			totalBytesDownloaded.addAndGet(bytesDownloaded);
+			totalDownloadTime.addAndGet(endTime - startTime);
 
 		}catch(Exception e){
 			System.out.println("Error downloading files from " 
