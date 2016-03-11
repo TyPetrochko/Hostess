@@ -270,9 +270,10 @@ class Tester implements Runnable{
 						socket.close();
 					}catch (Exception e){
 						try{
-							socket.close()
-						} catch (Exception e){
+							socket.close();
+						} catch (Exception ee){
 							System.err.println("Couldn't close socket");
+							ee.printStackTrace();
 						}
 
 					}
