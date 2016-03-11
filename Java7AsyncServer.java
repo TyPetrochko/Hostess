@@ -98,12 +98,12 @@ public class Java7AsyncServer{
             }
         }else{
             printUsage();
-            return;
+            System.exit(-1);
         }
     }
 
     public static void printUsage(){
-        Debug.DEBUG("Usage: java AsyncServer -config config.conf");
+        System.err.println("Usage: java Java7AsyncServer -config config.conf");
     }
 }
 

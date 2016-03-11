@@ -66,15 +66,19 @@ class SHTTPTestClient{
 
 		if(print){
 			// print metrics
-			System.out.println("Total number of files downloaded: " + 
-				Tester.totalFilesDownloaded.get());
-			System.out.println("Total number of files downloaded/sec: " + 
-				(Tester.totalFilesDownloaded.get() / (actualTestTime)));
-			System.out.println("Average wait time/download (ms): " + 
-				(Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
-			System.out.println("Average bytes downloaded/sec: " 
-				+ (Tester.totalBytesDownloaded.get() / actualTestTime));
-			System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
+			if(Tester.totalFilesDownloaded.get() > 0){
+				System.out.println("Total number of files downloaded: " + 
+					Tester.totalFilesDownloaded.get());
+				System.out.println("Total number of files downloaded/sec: " + 
+					(Tester.totalFilesDownloaded.get() / (actualTestTime)));
+				System.out.println("Average wait time/download (ms): " + 
+					(Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
+				System.out.println("Average bytes downloaded/sec: " 
+					+ (Tester.totalBytesDownloaded.get() / actualTestTime));
+				System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
+			}else{
+				System.out.println("No files could be downloaded");
+			}
 		}
 
 		// return metrics

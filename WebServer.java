@@ -170,8 +170,8 @@ class WebServer{
     };
 
     public static void printUsage(){
-    	Debug.DEBUG("Usage: java WebServer <Server> -config config.conf");
-	 	Debug.DEBUG("\tServer: sequential | per-request-thread | competing | busywait | suspension");
+    	System.err.println("Usage: java WebServer <Server> -config config.conf");
+	 	System.err.println("\tServer: sequential | per-request-thread | competing | busywait | suspension");
     }
 } // end of class WebServer
 

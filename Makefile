@@ -56,27 +56,26 @@ project-tester: client
 	javac ProjectTester.java
 
 test-project:
-	java ProjectTester peacock.zoo.cs.yale.edu zoo 6789 data/list1 5
+	java ProjectTester hornet.zoo.cs.yale.edu zoo 6789 data/list1 5
 
 jarify:
 	rm -f *.jar
 	jar cfe Server.jar WebServer WebServer.class WebRequestHandler.class SingleThreadRequestHandler.class ConfigParser.class VirtualHost.class CompetingServiceThread.class BusyWaitServiceThread.class SuspensionServiceThread.class ILoadBalancer.class MyLoadBalancer.class LoadBalancer.class Debug.class FileCache.class FileWithTimestamp.class
 	rm -f *.jar
-	jar cfe Server.jar WebServer *.class
+	jar cfe WebServer.jar WebServer *.class
 	jar cfe AsyncServer.jar AsyncServer *.class
 	jar cfe Java7AsyncServer.jar Java7AsyncServer *.class
+	jar cfe SHTTPTestClient.jar SHTTPTestClient *.class
 
 jar-async:
 	java -jar Java7AsyncServer.jar -config data/config.conf
 
 jar-suspension:
-	java -jar Server.jar suspension -config data/config.conf
+	java -jar WebServer.jar suspension -config data/config.conf
 
 source:
 	rm -f *.tar
 	tar -cvf source.tar *.java
-
-
 
 
 clean:

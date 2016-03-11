@@ -100,7 +100,7 @@ public class AsyncServer {
     } // end of main
 
     public static void printUsage(){
-        Debug.DEBUG("Usage: java AsyncServer -config config.conf");
+        System.err.println("Usage: java AsyncServer -config config.conf");
     }
 
 } // end of class
