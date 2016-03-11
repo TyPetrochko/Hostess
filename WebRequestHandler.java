@@ -298,7 +298,7 @@ class WebRequestHandler {
 
         try{
             outToClient.write(fileInBytes, 0, numOfBytes);
-        catch(Exception e){
+        }catch(Exception e){
             System.err.println("Couldn't write to client!");
             throw e;
         }
