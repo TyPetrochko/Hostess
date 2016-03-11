@@ -172,7 +172,7 @@ class Tester implements Runnable{
 
 					// Find content length and download file
 					String line = inReader.readLine();
-					while(line != ""){
+					while(line != "" && System.currentTimeMillis() < endTime){
 						bytesDownloaded += line.length();
 						String[] tokens = line.split(" ");
 						if(line.contains("Content-Length")){
@@ -180,7 +180,7 @@ class Tester implements Runnable{
 							char[] readInto = new char[responseLength];
 							int bytesRead = 0;
 
-							while(bytesRead < responseLength){
+							while(bytesRead < responseLength && System.currentTimeMillis() < endTime){
 								int by = inReader.read(readInto);
 								if(by != -1){
 									bytesRead += by;
