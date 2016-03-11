@@ -309,7 +309,7 @@ class WebRequestHandler {
             outToClient.write(fileInBytes, 0, numOfBytes);
         }catch(Exception e){
             // client timed out, swallow error
-            e.printStackTrace();
+            throw e;
         }
     }
 
