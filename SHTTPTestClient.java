@@ -269,7 +269,12 @@ class Tester implements Runnable{
 
 						socket.close();
 					}catch (Exception e){
-						// encountered error - carry on
+						try{
+							socket.close()
+						} catch (Exception e){
+							System.err.println("Couldn't close socket");
+						}
+
 					}
 				} // end for-loop over files
 			} // end timer while-loop
