@@ -72,6 +72,12 @@ jar-async:
 jar-suspension:
 	java -jar Server.jar suspension -config data/config.conf
 
+source:
+	rm -f *.tar
+	tar -cvf source.tar *.java
+
+
+
 
 clean:
 	rm *.class
