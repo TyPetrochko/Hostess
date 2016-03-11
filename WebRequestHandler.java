@@ -223,24 +223,29 @@ class WebRequestHandler {
             fileInfo = new File(fileName);
         }
 
+        // we want index.html
         if(!fileInfo.isFile() && urlName.equals("")){
             urlName = "index.html";
             fileName = WWW_ROOT + urlName;
             fileInfo = new File(fileName);
         }
         
+        // we want to load balancer
         if(!fileInfo.isFile() && urlName.equalsIgnoreCase("load")){
             isLoadBalancing = true;
         }else if(!fileInfo.isFile()){
+
+            // file missing
             outputError(404,  "Not Found");
             fileInfo = null;
         }
 
     } // end mapURL2file
 
-
+    // output all response headers to client for this request
     private void outputResponseHeader() throws Exception 
     {
+
         outToClient.writeBytes("HTTP/1.0 200 Document Follows\r\n");
         outToClient.writeBytes("Date: " + DateTimeFormatter.RFC_1123_DATE_TIME
             .format(ZonedDateTime.now(ZoneId.of("GMT"))) + "\r\n");
@@ -262,8 +267,11 @@ class WebRequestHandler {
             outToClient.writeBytes("Content-Type: text/plain\r\n");
     }
 
+    // output everything after headers to client
     private void outputResponseBody() throws Exception 
     {
+
+        // check if CGI
         if(fileInfo.canExecute()){
             isExecutable = true;
             runCGI();
@@ -272,6 +280,7 @@ class WebRequestHandler {
             isExecutable = false;
         }
 
+        // get file length
         int numOfBytes = (int) fileInfo.length();
         outToClient.writeBytes("Content-Length: " + numOfBytes + "\r\n");
         outToClient.writeBytes("\r\n");
@@ -312,6 +321,7 @@ class WebRequestHandler {
             env.put("QUERY_STRING", QUERY_STRING);
         }
 
+        // set the remainder of environment variables
         setEnvironmentVariables(env);
 
         // funnel into the pipe 1024 bytes at a time
@@ -338,8 +348,11 @@ class WebRequestHandler {
         } catch (Exception e) {}
     }
 
+    // perform load balancing
     void loadBalance(){
         if(LoadBalancer.loadBalancerSingleton != null){
+
+            // make some status variables
             Map<String, Object> statusVars = new HashMap<String, Object>();
             if(WebServer.isOverloaded){
                 statusVars.put("isOverloaded", null);
@@ -347,6 +360,8 @@ class WebRequestHandler {
             statusVars.put("numUsers", WebServer.numUsers);
             statusVars.put("maxUsers", WebServer.maxUsers);
             statusVars.put("maxLoadFactor", WebServer.maxLoadFactor);
+
+            // determine if we can handle more users
             try{
                 if(LoadBalancer.loadBalancerSingleton.canAcceptNewConnections(statusVars)){
                     outToClient.writeBytes("HTTP/1.0 200 OK\r\n");
@@ -369,12 +384,6 @@ class WebRequestHandler {
         String SERVER_NAME = serverAddress.getHostAddress();
         String SERVER_PORT = port + "";
         String SERVER_PROTOCOL = "HTTP/1.0";
-
-        // ignore the following env variables (application specific)
-        //String REMOTE_IDENT;
-        //String REMOTE_USER;
-        //String SERVER_SOFTWARE;
-        
 
         env.put("REMOTE_ADDR", REMOTE_ADDR);
         env.put("REMOTE_HOST", REMOTE_HOST);

@@ -19,24 +19,27 @@ public class CompetingServiceThread extends Thread {
   
     public void run() {
 
-	    System.out.println("Thread " + this + " started.");
+	    Debug.DEBUG("Thread " + this + " started.");
 	    while (true) {
 	        // get a new request connection
 	        Socket s = null;
 
 	        synchronized (welcomeSocket) {         
 		        try {
+		        	// track number of users for load balancing
 		        	WebServer.numUsers++;
 		            s = welcomeSocket.accept();
 		        } catch (IOException e) {
-		        	System.out.println("Thread " + this 
+		        	Debug.DEBUG("Thread " + this 
 		        		+ " encountered trouble accepting sockets");
 		        	e.printStackTrace();
 		        }
 	        } // end of extract a request
 
 	        try{
-				WebRequestHandler wrh = new WebRequestHandler( s, WebServer.listenSocket, virtualHosts );
+	        	// process the request
+				WebRequestHandler wrh = new WebRequestHandler( s, 
+					WebServer.listenSocket, virtualHosts );
 				wrh.processRequest();
 			}catch (Exception e){
 				e.printStackTrace();

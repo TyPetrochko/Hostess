@@ -1,3 +1,7 @@
+/*
+** DEPRACATED
+*/
+
 import java.nio.channels.*;
 import java.io.IOException;
 import java.util.*; // for Set and Iterator

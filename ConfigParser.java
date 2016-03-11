@@ -61,16 +61,18 @@ class ConfigParser{
 	    }
     }// end of constructor
 
+    // globally accessible getter for the default load-balancer
     private ILoadBalancer getLoadBalancer(String classPath){
     	ILoadBalancer toReturn = null;
 		try {
+			// try to load it
 	        Class<?> c = Class.forName(classPath);
 	        if (ILoadBalancer.class.isAssignableFrom(c)) {
 	        	Object o = c.newInstance();
 			    toReturn = ILoadBalancer.class.cast(o);
 			}
 	    } catch (Exception e) {
-	    	System.out.println("Couldn't load class from config file");
+	    	System.err.println("Couldn't load class from config file");
 	        e.printStackTrace();
 	    }
 

@@ -11,21 +11,28 @@ class SHTTPTestClient{
 	public static int threads;
 	public static String fileList;
 	public static double testingTime;
-	//public static List<String> files;
 	public static String[] files;
 
 
 	public static void main (String [] args){
-		
+		configAndRun(args, true);
+	}
+
+	public static float configAndRun(String [] args, boolean shouldPrint){
 		// Correct # of args?
 		if(args.length != 12){
 			printUsage();
-			return;
+			return -1.0f;
 		}
 
 		// Get command line args
 		setCommandLineArgs(args);
 
+		return runTest(shouldPrint);
+	}
+
+	// perform benchmarking
+	public static float runTest(boolean print){
 		Thread[] threadList = new Thread[threads];
 		for(int i = 0; i < threads; i++){
 			threadList[i] = new Thread(new Tester(testingTime));
@@ -41,16 +48,28 @@ class SHTTPTestClient{
 			e.printStackTrace();
 		}
 
+		// we may have gone over time limit a bit
 		double actualTestTime = ((double) Tester.totalDownloadTime.get() / 1000) / (double)threads;
-
-		System.out.println("Actual test time: " + actualTestTime);
-		System.out.println("Total number of files downloaded: " + Tester.totalFilesDownloaded.get());
-		System.out.println("Total number of files downloaded/sec: " + (Tester.totalFilesDownloaded.get() / (actualTestTime)));
-		System.out.println("Average wait time/download (ms): " + (Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
-		float mbps = (float)(Tester.totalBytesDownloaded.get() / (actualTestTime * 1000000));
-		System.out.println("Average bytes downloaded/sec: " + (Tester.totalBytesDownloaded.get() / actualTestTime));
-		System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
 		
+		// track megabytes/second
+		float mbps = (float)(Tester.totalBytesDownloaded.get() 
+			/ (actualTestTime * 1000000));
+
+
+		if(print){
+			// print metrics
+			System.out.println("Total number of files downloaded: " + 
+				Tester.totalFilesDownloaded.get());
+			System.out.println("Total number of files downloaded/sec: " + 
+				(Tester.totalFilesDownloaded.get() / (actualTestTime)));
+			System.out.println("Average wait time/download (ms): " + 
+				(Tester.totalWaitTime.get() / Tester.totalNumWaits.get()));
+			System.out.println("Average bytes downloaded/sec: " 
+				+ (Tester.totalBytesDownloaded.get() / actualTestTime));
+			System.out.println(String.format("Average MB downloaded/sec: %.4f", mbps));
+		}
+		
+		return mbps;
 	} // end main
 
 	public static void printUsage(){
@@ -99,6 +118,7 @@ class SHTTPTestClient{
 	}
 }
 
+// main testing thread
 class Tester implements Runnable{
 	public Socket socket;
 	public int numFilesDownloaded = 0;
@@ -124,13 +144,18 @@ class Tester implements Runnable{
 			long startTime = System.currentTimeMillis();
 			long endTime = startTime + (long)(timeToRun * 1000);
 
+			// track number of files downloaded
 			int numFilesDownloaded = 0;
 			while(System.currentTimeMillis() < endTime){
+
 				// Download all files!
 				if(SHTTPTestClient.files == null){
 					break;
 				}
+
+				// iterate over all files
 				for(String file : SHTTPTestClient.files){
+					
 					// Don't go over alotted time
 					if(System.currentTimeMillis() >= endTime){
 						break;
@@ -138,13 +163,15 @@ class Tester implements Runnable{
 
 					// Make a new socket with reader/writer
 					socket = new Socket(SHTTPTestClient.server, SHTTPTestClient.port);
-					//socket.setSoTimeout((int)(SHTTPTestClient.testingTime * 1000));
+					socket.setSoTimeout((int)(SHTTPTestClient.testingTime * 1000));
+					
+					// get ready to write request
 					Writer outWriter = new OutputStreamWriter(socket.getOutputStream(), 
 						"US-ASCII");
 					BufferedReader inReader = new BufferedReader(
 						new InputStreamReader(socket.getInputStream()));
 
-					// Request file
+					// make request
 					outWriter.write("GET " + file + " HTTP/1.0\r\n");
 					if(SHTTPTestClient.serverName != null){
 						outWriter.write("Host: " + SHTTPTestClient.serverName + "\r\n");
@@ -152,7 +179,7 @@ class Tester implements Runnable{
 					outWriter.write("\r\n");
 					outWriter.flush();
 
-					// Wait for a reply
+					// wait for a reply
 					long startedWaiting = System.currentTimeMillis();
 
 					// Receive response from network
@@ -174,46 +201,72 @@ class Tester implements Runnable{
 						}
 					}
 
-					// Find content length and download file
+					// process response header
 					String line = inReader.readLine();
+
+					// read through each line as long as we have time
 					while(line != "" && System.currentTimeMillis() < endTime){
+
+						/* Using .length() is an underestimate of bytes,
+						** but avoids processing overhead
+						*/
 						bytesDownloaded += line.length();
+
+						// parse header
 						String[] tokens = line.split(" ");
+
+						// did we get content-length?
 						if(line.contains("Content-Length")){
+
+							// max amount of data we could get from this request
 							int responseLength = Integer.parseInt(tokens[1]);
 							char[] readInto = new char[responseLength];
 							int bytesRead = 0;
-							
+
+							/* we give the server three chances to get its data 
+							** to client before giving up and starting a new 
+							** request
+							*/
 							int numMisses = 0;
-							while(bytesRead < responseLength && System.currentTimeMillis() < endTime && numMisses < 3){
+							while(bytesRead < responseLength 
+								&& System.currentTimeMillis() < endTime 
+								&& numMisses < 3){
+
+								// how many writes did we read this pass?
 								int bytesReadThisPass = inReader.read(readInto);
 								if(bytesReadThisPass == -1){
-									numMisses++;
+									numMisses++; // server didn't respond in time
 								}else{
 									bytesRead += bytesReadThisPass;
 								}
-
 							}
 
+							// update how many bytes this thread has downloaded
 							bytesDownloaded += bytesRead;
 
 							if(bytesRead != responseLength){
-								System.out.println("Server promised " 
-									+ responseLength + " bytes but only received " + bytesRead);
+								Debug.DEBUG("Server promised " 
+									+ responseLength 
+									+ " bytes but only received " + bytesRead);
 							}
 							break;
 						}
+
+						// read in next header
 						line = inReader.readLine();
 					}
+
+					// finished downloading a file; request a new one
 					numFilesDownloaded++;
 
 					socket.close();
 				} // end for-loop over files
 			} // end timer while-loop
 
+			// when did this test finish?
+			endTime = System.currentTimeMillis();
 
-			endTime = System.currentTimeMillis() ;
-
+			// track global totals
 			totalFilesDownloaded.addAndGet(numFilesDownloaded);
 			totalWaitTime.addAndGet(waitTime);
 			totalNumWaits.addAndGet(numWaits);
@@ -221,9 +274,9 @@ class Tester implements Runnable{
 			totalDownloadTime.addAndGet(endTime - startTime);
 
 		}catch(Exception e){
-			System.out.println("Error downloading files from " 
+			System.err.println("Error downloading files from " 
 				+ SHTTPTestClient.server);
-			e.printStackTrace();
+			return;
 		} // end try-catch
 	} // end run
 } // end inner class

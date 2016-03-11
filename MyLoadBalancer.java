@@ -1,3 +1,14 @@
+/*
+** An example (simple) load balancer
+** mostly for testing purposes.
+**
+** The load balancer takes generic
+** string arguments via a hashmap
+** statusVars, and performs some logic
+** based on whichever parameters are
+** available.
+*/
+
 import java.util.*;
 
 public class MyLoadBalancer implements ILoadBalancer {

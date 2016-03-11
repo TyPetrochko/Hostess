@@ -23,21 +23,18 @@ public class Acceptor implements IAcceptHandler {
         // configure the connection to be non-blocking
         client.configureBlocking(false);
 
-        /*
-         * register the new connection with *read* events/operations
-         * SelectionKey clientKey = client.register( selector,
-         * SelectionKey.OP_READ);// | SelectionKey.OP_WRITE);
-         */
-
+        //register the new connection with *read* events/operations
         IReadWriteHandler rwH = srwf.createHandler();
         int ops = rwH.getInitOps();
 
+        // register the incoming acception
         SelectionKey clientKey = client.register(key.selector(), ops);
         clientKey.attach(rwH);
 
-        TimeoutThread.addDeadline(clientKey, System.currentTimeMillis() + AsyncServer.INCOMPLETE_TIMEOUT);
-        //Timeout.addDeadline(clientKey, AsyncServer.INCOMPLETE_TIMEOUT);
-    
+        // make sure to time this thread out if it doesn't respond
+        TimeoutThread.addDeadline(clientKey, System.currentTimeMillis() 
+            + AsyncServer.INCOMPLETE_TIMEOUT);
+
     } // end of handleAccept
 
 } // end of class

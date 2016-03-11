@@ -19,7 +19,7 @@ public class BusyWaitServiceThread extends Thread {
   
     public void run() {
 
-	    System.out.println("Thread " + this + " started.");
+	    Debug.DEBUG("Thread " + this + " started.");
 
 	    // busy-wait forever
 	    while (true) {
@@ -32,18 +32,25 @@ public class BusyWaitServiceThread extends Thread {
 		            if (!sockets.isEmpty()) {
 			           // remove the first request
 			           s = (Socket) sockets.remove(0); 
-			           System.out.println("Thread " + this 
+			           Debug.DEBUG("Thread " + this 
 					       + " process request " + s);
 		            } // end if
 		        } // end of sync
 	        } // end while
 	        try{
+
+	        	// track number of users for load-balancing
 	        	WebServer.numUsers++;
-				WebRequestHandler wrh = new WebRequestHandler( s, WebServer.listenSocket, virtualHosts );
+
+	        	// process request
+				WebRequestHandler wrh = new WebRequestHandler( s, 
+					WebServer.listenSocket, virtualHosts );
 				wrh.processRequest();
 			}catch (Exception e){
 				e.printStackTrace();
 			}
+
+			// one user has left
 			WebServer.numUsers--;
 		}
     } // end run

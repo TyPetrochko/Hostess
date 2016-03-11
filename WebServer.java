@@ -174,6 +174,7 @@ class WebServer{
     }
 } // end of class WebServer
 
+// a delegate for processing tasks in busywait thread pool
 class BusyWaitDelegate extends Thread {
 	private List<Socket> socketPool;
 	private ServerSocket welcomeSocket;
@@ -202,6 +203,7 @@ class BusyWaitDelegate extends Thread {
 	}
 }
 
+// a delegate for processing tasks in the suspension thread server
 class SuspensionDelegate extends Thread {
 	private List<Socket> socketPool;
 	private ServerSocket welcomeSocket;

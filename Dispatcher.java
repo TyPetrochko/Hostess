@@ -20,29 +20,10 @@ public class Dispatcher implements Runnable {
     public Selector selector()  {
         return selector;
     }
-    /*
-    public SelectionKey registerNewSelection(SelectableChannel channel,
-            IChannelHandler handler, int ops) throws ClosedChannelException {
-        SelectionKey key = channel.register(selector, ops);
-        key.attach(handler);
-        return key;
-    } // end of registerNewChannel
-
-    public SelectionKey keyFor(SelectableChannel channel) {
-        return channel.keyFor(selector);
-    }
-
-    public void deregisterSelection(SelectionKey key) throws IOException {
-        key.cancel();
-    }
-
-    public void updateInterests(SelectionKey sk, int newOps) {
-        sk.interestOps(newOps);
-    }
-*/
     
     public void run() {
 
+        // busy-wait
         while (true) {
             Debug.DEBUG("Enter selection");
             try {

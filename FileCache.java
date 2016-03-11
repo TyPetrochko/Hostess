@@ -1,3 +1,7 @@
+/* 
+** A simple file-cache singleton to remember recently-used files
+*/
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -8,9 +12,12 @@ class FileCache {
     private long cacheSize;
     private long cacheCapacity;
 
+    // singleton class
     public static FileCache globalCache;
 
     public FileCache(long capacity){
+
+        // if no default cache, make this it
         if(globalCache == null){
         	cache = new ConcurrentHashMap<String, FileWithTimestamp>();
         	cacheCapacity = capacity;
@@ -18,6 +25,7 @@ class FileCache {
         }
     }
 
+    // cache a file if space remaining
     public boolean cacheIfPossible(String fileName, 
     	byte[] bytes){
 
@@ -44,6 +52,7 @@ class FileCache {
     }
 }
 
+// wrapper class for a buffered file
 class FileWithTimestamp{
 	public FileWithTimestamp(byte[] file){
 		this.file = file;

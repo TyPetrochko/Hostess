@@ -19,10 +19,15 @@ class SingleThreadRequestHandler extends Thread{
 
 	public void run(){
 		try{
+			// track number of users for load balancing
 			WebServer.numUsers ++;
+
+			// process request
 			WebRequestHandler wrh = 
 			        new WebRequestHandler( socket, WebServer.listenSocket, virtualHosts );
 		    wrh.processRequest();
+
+		    // update number of users
 		    WebServer.numUsers --;
 		}catch (Exception e){
 			e.printStackTrace();

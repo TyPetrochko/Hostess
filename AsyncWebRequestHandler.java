@@ -34,24 +34,27 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         StringBuffer inBuff, ByteBuffer outBuff, 
         List<VirtualHost> virtualHosts) throws Exception
     {
+
+        /* we inherit from the non-async web request handler to avoid
+        ** reimplementing some of the longer methods
+        */
         super(null, null, virtualHosts);
 
         this.inBuff = inBuff;
         this.outBuff = outBuff;
-
         this.remoteAddress = remoteAddress;
-
         this.serverAddress = serverAddress;
-
         this.port = port;
 
+        // keep number of handlers around for crude load-balancing
         numHandlers++;
 
+        // buffer reading
         inFromClient = new BufferedReader(new StringReader(inBuff.toString()));
 
+        // keep track of whether we're done reading from the client
         doneProcessing = false;
         progress = 0;
-
     }
 
     public void processRequest() 
@@ -78,131 +81,32 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                     outputResponseBody();
                 }
             } else{
-                // some error occurred
+                // some error occurred, but it has already been handled
                 doneProcessing = true;
             }
 
         } catch (Exception e) {
+            // some error has occurred, which hasn't been handled yet
             try{
                 fileStream.close();
             }catch (Exception ee){
                 System.err.println("Could not close file stream");
                 ee.printStackTrace();
             }
+
+            // output a 400 error
             outputError(400, "Server error");
-            Debug.DEBUG("We encountered error but we're done processing!");
             doneProcessing = true;
-            e.printStackTrace();
+
+            if(Debug.DEBUG)
+                e.printStackTrace();
         }
 
     } // end of processRequest
 
-    /*
-    public boolean continueProcessing(){
-
-        try{
-            // send file content
-            byte [] batch = new byte[outBuff.remaining()];
-            int isComplete = fileStream.read(batch);
-            outBuff.put(batch);
-            if(isComplete == -1){
-                doneProcessing = true;
-            }else{
-                doneProcessing = false;
-            }
-        }catch (Exception e) {
-            Debug.DEBUG("Error continuing to send large file");
-            e.printStackTrace();
-        }
-    }
-    */
-    /*
-    public void mapURL2File() throws IOException 
-    {
-        // Configure default host
-        if(!virtualHosts.isEmpty()){
-            this.WWW_ROOT = virtualHosts.get(0).documentRoot;
-        }else{
-            throw new IOException();
-        }
-
-        String requestMessageLine = inFromClient.readLine();
-        DEBUG("Request " + reqCount + ": " + requestMessageLine);
-
-        // process the request
-        String[] request = requestMessageLine.split("\\s");
-        
-        if (request.length < 2 || !request[0].equals("GET"))
-        {
-            outputError(500, "Bad request: "+ requestMessageLine);
-            return;
-        }
-
-        // parse URL to retrieve file name
-        urlName = request[1];
-        
-        if ( urlName.startsWith("/") == true )
-           urlName  = urlName.substring(1);
-
-        // Did the request specify a host? 
-        String line = inFromClient.readLine();
-        while (line != null && !line.equals("") ) {
-          String[] tokens = line.split("\\s");
-          if(tokens.length >= 2 && tokens[0].equals("Host:")){
-            
-            // User specified a host
-            for(VirtualHost v : virtualHosts){
-                if(v.serverName.equals(tokens[1])){
-                    WWW_ROOT = v.documentRoot;
-                    serverName = v.serverName;
-                }
-            }
-          }
-          line = inFromClient.readLine();
-        }
-
-        // System.out.print();ut optional slash at end
-        if(!WWW_ROOT.substring(WWW_ROOT.length() - 1).equals("/")){
-            WWW_ROOT = WWW_ROOT + "/";
-        }
-       
-
-        // map to file name
-        fileName = WWW_ROOT + urlName;
-        DEBUG("Map to File name: " + fileName);
-
-        fileInfo = new File( fileName );
-        if ( !fileInfo.isFile() ) 
-        {
-            outputError(404,  "Not Found");
-            fileInfo = null;
-        }
-
-    } // end mapURL2file
-    */
-    
-
-
+    // write basic response header based off of file type
     private void outputResponseHeader() throws IOException 
     {
-        /*
-            outToClient.writeBytes("HTTP/1.0 200 Document Follows\r\n");
-            outToClient.writeBytes("Date: " 
-                + new SimpleDateFormat("EEEE, dd MMM HH:mm:ss z").format(new Date()) + "\r\n");
-
-            if(serverName != null){
-                outToClient.writeBytes("Server: " + serverName + "\r\n");
-            }
-
-            if (urlName.endsWith(".jpg"))
-                outToClient.writeBytes("Content-Type: image/jpeg\r\n");
-            else if (urlName.endsWith(".gif"))
-                outToClient.writeBytes("Content-Type: image/gif\r\n");
-            else if (urlName.endsWith(".html") || urlName.endsWith(".htm"))
-                outToClient.writeBytes("Content-Type: text/html\r\n");
-            else
-                outToClient.writeBytes("Content-Type: text/plain\r\n");
-            */
 
         write("HTTP/1.0 200 Document Follows\r\n");
         write("Date: " 
@@ -212,6 +116,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             write("Server: " + serverName + "\r\n");
         }
 
+        // track last-modified header
         write("Last-Modified: " + DateTimeFormatter
             .RFC_1123_DATE_TIME.format(lastModifiedZdt) + "\r\n");
 
@@ -225,10 +130,11 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             write("Content-Type: text/plain\r\n");
     }
 
+    // output the response body, potentially resulting in errors
     private void outputResponseBody() throws IOException 
     {
         if(fileInfo.canExecute()){
-            Debug.DEBUG("Run cgi script now!");
+            Debug.DEBUG("Running CGI script");
             try{
                 isExecutable = true;
                 runCGI();
@@ -240,18 +146,24 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         }else{
             isExecutable = false;
         }
+
+        // how large is the file?
         int fileSize = (int) fileInfo.length();
         write("Content-Length: " + fileSize + "\r\n");
         write("\r\n");
 
-        // only cache files small enough to cache
-        
-        if(fileSize > outBuff.remaining()){
+        /* here, we only cache files if we can handle the file in a single
+        ** pass AND the file is small enough to cache.
+        */
+        if(fileSize > outBuff.remaining()){ // not enough space in buffer
+
+            // write until buffer is full, and finish on next pass
             fileStream  = new FileInputStream (fileName);
-            Debug.DEBUG("Not done yet");
             byte [] batch = new byte[outBuff.remaining()];
             fileStream.read(batch);
             outBuff.put(batch);
+
+            // keep track of how much we've written
             doneProcessing = false;
             progress += batch.length;
         }else{
@@ -259,15 +171,16 @@ class AsyncWebRequestHandler extends WebRequestHandler {
             byte[] fileInBytes;
             if(FileCache.globalCache.hasFile(fileName) && FileCache.globalCache
                 .cachedTimeMillis(fileName) > fileInfo.lastModified()){
-                // cache hit
-                Debug.DEBUG("Cache hit!");
+                // cache hit, skip file I/O
+                Debug.DEBUG("Cache hit: " + fileName);
                 fileInBytes = FileCache.globalCache.getFile(fileName);
-            }
-            else {
-                fileStream  = new FileInputStream (fileName);
-                // cache miss; read in file
-                Debug.DEBUG("Cache miss :(");
+            }else {
                 
+                // cache miss
+                Debug.DEBUG("Cache miss: " + fileName);
+
+                // handle file I/O
+                fileStream  = new FileInputStream (fileName);
                 fileInBytes = new byte[fileSize];
                 fileStream.read(fileInBytes);
                 fileStream.close();
@@ -276,12 +189,17 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 FileCache.globalCache.cacheIfPossible(fileName, fileInBytes);
             }
 
+            // we have output the whole file, so we won't need another pass
             outBuff.put(fileInBytes);
             doneProcessing = true;
         }
     }
 
+    /* in a previous pass through the file, we couldn't load the whole file
+    ** into the buffer, so keep processing
+    */
     public boolean continueProcessing() throws Exception{
+        
         // assume that outBuff has been cleared
         if(outBuff.remaining() <= 0){
             System.err.println("Outbuff hasn't been cleared");
@@ -295,11 +213,12 @@ class AsyncWebRequestHandler extends WebRequestHandler {
 
         int fileSize = (int) fileInfo.length();
 
+        // again, check if the remaining chunks of file will fit in buffer
         if (fileSize - progress > outBuff.remaining()){
             byte [] batch = new byte[outBuff.remaining()];
             fileStream.read(batch);
             outBuff.put(batch);
-            doneProcessing = false;
+            doneProcessing = false; // still not done yet
             progress += batch.length;
         }else{
             byte[] fileInBytes = new byte[fileSize - (int)progress];
@@ -312,22 +231,26 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         return doneProcessing;
     }
 
+    // run a CGI script
     private void runCGI() throws Exception{
-        Debug.DEBUG("Running CGI first time");
 
         // build process and set query string in environment variable
         ProcessBuilder pb = new ProcessBuilder(fileName);
+
+        // set query string
         Map<String, String> env = pb.environment();
         if(QUERY_STRING != null){
             env.put("QUERY_STRING", QUERY_STRING);
         }
 
+        // set remaining environment variables
         setEnvironmentVariables(env);
 
         // funnel into the pipe 1024 bytes at a time
         cgiInput = pb.start().getInputStream();
         cgiBuffer = new byte[1024];
 
+        // track how much data we've gone through
         long batchProgress = 0;
         while ((cgiBytesRead = cgiInput.read(cgiBuffer)) != -1)
         {
@@ -337,14 +260,18 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 progress += batchProgress;
                 return;
             }else{
+                // write some data
                 outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
             }
         }
+
+        // we're done processing
         doneProcessing = true;
     }
 
+    // we ran out of buffer space; continue running CGI
     private void continueRunningCGI() throws Exception{
-        Debug.DEBUG("Running CGI again");
+        Debug.DEBUG("Finishing CGI again");
         
         // flush remaining bytes left from last pass
         outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
@@ -358,14 +285,18 @@ class AsyncWebRequestHandler extends WebRequestHandler {
                 progress += batchProgress;
                 return;
             }else{
+                // write some bytes
                 outBuff.put(cgiBuffer, 0, (int)cgiBytesRead);
                 batchProgress += cgiBytesRead;
             }
         }
+
+        // done processing
         progress += batchProgress;
         doneProcessing = true;
     }
 
+    // send an error code to client
     void outputError(int errCode, String errMsg)
     {
         try {
@@ -374,6 +305,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         } catch (Exception e) {}
     }
 
+    // respond that file hasn't been modified
     void outputNotModified()
     {
         Debug.DEBUG("Well, it wasn't modified!");
@@ -382,6 +314,7 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         } catch (Exception e) {}
     }
 
+    // write some data to file
     void write(String s){
         try{
             outBuff.put(s.getBytes("US-ASCII"));
@@ -391,12 +324,18 @@ class AsyncWebRequestHandler extends WebRequestHandler {
         }
     }
 
+    // perform loadbalancing (called from WebRequestHandler)
     void loadBalance(){
         if(LoadBalancer.loadBalancerSingleton != null){
+
+            // send some paramaters to load balancer
             Map<String, Object> statusVars = new HashMap<String, Object>();
             statusVars.put("numUsers", numHandlers);
+            
+            // send load balancer result
             try{
-                if(LoadBalancer.loadBalancerSingleton.canAcceptNewConnections(statusVars)){
+                if(LoadBalancer.loadBalancerSingleton
+                    .canAcceptNewConnections(statusVars)){
                     write("HTTP/1.0 200 OK\r\n");
                 }else{
                     write("HTTP/1.0 503 Service Unavailable\r\n");

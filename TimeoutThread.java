@@ -1,9 +1,17 @@
+/*
+** A simple timeout thread to periodically
+** remove clients that have timed out (for 
+** async server)
+*/
+
 import java.nio.channels.*;
 import java.io.IOException;
-import java.util.*; // for Set and Iterator
+import java.util.*;
 import java.util.concurrent.*;
 
 public class TimeoutThread extends Thread {
+
+	// track all deadlines
 	static ConcurrentHashMap <SelectionKey, Long> deadlines;
 	private Dispatcher dispatcher;
 
@@ -13,7 +21,7 @@ public class TimeoutThread extends Thread {
 	}
 
 	public void run (){
-		System.out.println("Timeout thread is running");
+		Debug.DEBUG("Timeout thread is running");
 
 		// remove stale/timed-out connections periodically
 		while(true){
@@ -27,24 +35,29 @@ public class TimeoutThread extends Thread {
 			// remove any deadlines that occured before "rightNow"
 			long rightNow = System.currentTimeMillis();
 			for(Map.Entry<SelectionKey, Long> pair : deadlines.entrySet()){
-				Long when = (Long) pair.getValue();
-				SelectionKey key = (SelectionKey) pair.getKey();
 
+				// when does this deadline extend?
+				Long when = (Long) pair.getValue();
+				SelectionKey key = (SelectionKey) pair.getKey()
+
+				// check if thread should timeout
 				if(when.longValue() < rightNow){
-					// thread timed out
+
+					// timeout; check if it's still a valid key
 					if (key.isValid()){
 						// abort this key
-						System.out.println("Thread timed out!");
+						Debug.DEBUG("Thread timed out!");
 						deadlines.remove(key);
 						key.cancel();
 						try{
 							key.channel().close();
 						}catch (Exception e){
-							System.out.println("Couldn't disconnect client");
+							System.err.println("Couldn't disconnect client");
 							e.printStackTrace();
 						}
 					}else{
-						System.out.println("Cleaning up key");
+						// key is no longer valid, remove it
+						Debug.DEBUG("Cleaning up key");
 						deadlines.remove(key);
 					}
 				}

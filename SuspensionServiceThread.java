@@ -34,26 +34,32 @@ public class SuspensionServiceThread extends Thread {
 	        	// wait until socket pool becomes non-empty
 	        	while(sockets.isEmpty()){
 	        		try{
-	        			System.out.println("Thread " + this + " went to sleep");
+	        			Debug.DEBUG("Thread " + this + " went to sleep");
 	        			sockets.wait();
 	        		}catch(Exception e){
 	        			e.printStackTrace();
 	        		}
 
-	        		System.out.println("Thread " + this + " woke up");
+	        		Debug.DEBUG("Thread " + this + " woke up");
 	        	}
 
 	        	s = (Socket) sockets.remove(0);
+
+	        	// update number of users for load balancing
 	        	WebServer.numUsers++;
 	        }
 
 	        try{
-				WebRequestHandler wrh = new WebRequestHandler( s, WebServer.listenSocket, virtualHosts );
+	        	// process the request
+				WebRequestHandler wrh = new WebRequestHandler( s, 
+					WebServer.listenSocket, virtualHosts );
 				wrh.processRequest();
 
 			}catch (Exception e){
 				e.printStackTrace();
 			}
+
+			// update number of users
 			WebServer.numUsers--;
 		}
     } // end run

@@ -1,3 +1,7 @@
+/*
+** A simple web-server using Java-7 async sockets
+*/
+
 import java.nio.channels.*;
 import java.net.*;
 import java.io.IOException;
@@ -6,22 +10,22 @@ import java.util.concurrent.*;
 import java.nio.*;
 
 public class Java7AsyncServer{
+
 	public static int DEFAULT_PORT = 6789;
     public static long INCOMPLETE_TIMEOUT = 3000;
-
+    public static long cacheSize = 8000;
     public static List<VirtualHost> virtualHosts = new ArrayList<VirtualHost>();
-
     public static AsynchronousServerSocketChannel serverSocket;
-	
-	public static long cacheSize = 8000;
-    
+
+
     public static AsynchronousServerSocketChannel openServerChannel(int port) {
+
     	// open a new async server socket
     	AsynchronousServerSocketChannel toReturn = null;
     	try{
     		toReturn = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(DEFAULT_PORT));	
     	}catch (Exception e){
-    		Debug.DEBUG("Problem opening async server socket channel");
+    		System.err.println("Problem opening async server socket channel");
     		e.printStackTrace();
     	}
 
@@ -161,7 +165,6 @@ class Java7AsyncHandler{
 			        request.append(line);
 
 					// only process request if it's finished
-					//if(upToHere.endsWith("\r\n\r\n") || upToHere.substring(upToHere.length() - bytesRead).equals("\r\n")){
 					if(request.toString().endsWith("\r\n\r\n") || line.equals("")){
 
 			            // handle the request and store handler
@@ -202,13 +205,21 @@ class Java7AsyncHandler{
 		});
 	}
 
+	// perform a write operation to client
 	public void write(){
+
+		// prepare buffer for writing
 		out.flip();
+
+		// async write
 		toHandle.write(out, null, new CompletionHandler<Integer, Void>(){
-			// probably gonna throw an error about not accessing in static w/e
+
+			// did the write complete?
 			public void completed(Integer bytesWritten, Void att){
+
+				// we may need to do more passes
 				if(asyncHandler.isDoneProcessing()){
-					Debug.DEBUG("We finished!");
+					Debug.DEBUG("Handler finished");
 					try{
 						toHandle.close();
 					}catch (Exception e){
@@ -216,8 +227,12 @@ class Java7AsyncHandler{
 						e.printStackTrace();
 					}
 				}else{
-					Debug.DEBUG("Not done... write some more!");
+					Debug.DEBUG("Handler not finished - write some more");
+
+					// clear output buffer
 					out.clear();
+
+					// continue processing (client may time-out)
 					try{
 						asyncHandler.continueProcessing();
 						write();
@@ -227,6 +242,8 @@ class Java7AsyncHandler{
 					}
 				}
 			}
+
+			// did the write fail?
 			public void failed (Throwable ex, Void att){
 				Debug.DEBUG("Writing failed");
 				try{
