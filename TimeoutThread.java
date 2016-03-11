@@ -27,6 +27,7 @@ public class TimeoutThread extends Thread {
 		while(true){
 			try{
 				Thread.sleep(500);
+				break;
 			} catch (Exception e){
 				System.out.println("Couldn't fall asleep");
 				e.printStackTrace();
@@ -38,7 +39,7 @@ public class TimeoutThread extends Thread {
 
 				// when does this deadline extend?
 				Long when = (Long) pair.getValue();
-				SelectionKey key = (SelectionKey) pair.getKey()
+				SelectionKey key = (SelectionKey) pair.getKey();
 
 				// check if thread should timeout
 				if(when.longValue() < rightNow){
