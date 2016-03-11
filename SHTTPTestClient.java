@@ -179,16 +179,20 @@ class Tester implements Runnable{
 							int responseLength = Integer.parseInt(tokens[1]);
 							char[] readInto = new char[responseLength];
 							int bytesRead = 0;
-
-							while(bytesRead < responseLength && System.currentTimeMillis() < endTime){
-								int by = inReader.read(readInto);
-								if(by != -1){
-									bytesRead += by;
+							
+							int numMisses = 0;
+							while(bytesRead < responseLength && System.currentTimeMillis() < endTime && numMisses < 3){
+								int bytesReadThisPass = inReader.read(readInto);
+								if(bytesReadThisPass == -1){
+									numMisses++;
+								}else{
+									bytesRead += bytesReadThisPass;
 								}
 
 							}
 
 							bytesDownloaded += bytesRead;
+
 							if(bytesRead != responseLength){
 								System.out.println("Server promised " 
 									+ responseLength + " bytes but only received " + bytesRead);
