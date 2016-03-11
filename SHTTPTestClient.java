@@ -163,111 +163,114 @@ class Tester implements Runnable{
 
 				// iterate over all files
 				for(String file : SHTTPTestClient.files){
-					
-					// Don't go over alotted time
-					if(System.currentTimeMillis() >= endTime){
-						break;
-					}
-
-					// Make a new socket with reader/writer
-					socket = new Socket(SHTTPTestClient.server, SHTTPTestClient.port);
-					socket.setSoTimeout((int)(SHTTPTestClient.testingTime * 1000));
-					
-					// get ready to write request
-					Writer outWriter = new OutputStreamWriter(socket.getOutputStream(), 
-						"US-ASCII");
-					BufferedReader inReader = new BufferedReader(
-						new InputStreamReader(socket.getInputStream()));
-
-					// make request
-					outWriter.write("GET " + file + " HTTP/1.0\r\n");
-					if(SHTTPTestClient.serverName != null){
-						outWriter.write("Host: " + SHTTPTestClient.serverName + "\r\n");
-					}
-					outWriter.write("\r\n");
-					outWriter.flush();
-
-					// wait for a reply
-					long startedWaiting = System.currentTimeMillis();
-
-					// Receive response from network
-					String response = inReader.readLine();
-
-					// Log how much time we waited
-					waitTime += System.currentTimeMillis() - startedWaiting;
-					numWaits ++;
-
-					// Was the request ok?
-					if(response == null){
-						return;
-					}else{
-						bytesDownloaded += response.length();
-						String[]tkz = response.split(" ");
-						if(tkz.length < 2 || !tkz[1].equals("200")){
-							System.err.println("Received a bad response: " + response);
-							return;
-						}
-					}
-
-					// process response header
-					String line = inReader.readLine();
-
-					// read through each line as long as we have time
-					while(line != "" && System.currentTimeMillis() < endTime){
-
-						/* Using .length() is an underestimate of bytes,
-						** but avoids processing overhead
-						*/
-						bytesDownloaded += line.length();
-
-						// parse header
-						String[] tokens = line.split(" ");
-
-						// did we get content-length?
-						if(line.contains("Content-Length")){
-
-							// max amount of data we could get from this request
-							int responseLength = Integer.parseInt(tokens[1]);
-							char[] readInto = new char[responseLength];
-							int bytesRead = 0;
-
-							/* we give the server three chances to get its data 
-							** to client before giving up and starting a new 
-							** request
-							*/
-							int numMisses = 0;
-							while(bytesRead < responseLength 
-								&& System.currentTimeMillis() < endTime 
-								&& numMisses < 3){
-
-								// how many writes did we read this pass?
-								int bytesReadThisPass = inReader.read(readInto);
-								if(bytesReadThisPass == -1){
-									numMisses++; // server didn't respond in time
-								}else{
-									bytesRead += bytesReadThisPass;
-								}
-							}
-
-							// update how many bytes this thread has downloaded
-							bytesDownloaded += bytesRead;
-
-							if(bytesRead != responseLength){
-								Debug.DEBUG("Server promised " 
-									+ responseLength 
-									+ " bytes but only received " + bytesRead);
-							}
+					try{
+						// Don't go over alotted time
+						if(System.currentTimeMillis() >= endTime){
 							break;
 						}
 
-						// read in next header
-						line = inReader.readLine();
+						// Make a new socket with reader/writer
+						socket = new Socket(SHTTPTestClient.server, SHTTPTestClient.port);
+						socket.setSoTimeout((int)(SHTTPTestClient.testingTime * 1000));
+						
+						// get ready to write request
+						Writer outWriter = new OutputStreamWriter(socket.getOutputStream(), 
+							"US-ASCII");
+						BufferedReader inReader = new BufferedReader(
+							new InputStreamReader(socket.getInputStream()));
+
+						// make request
+						outWriter.write("GET " + file + " HTTP/1.0\r\n");
+						if(SHTTPTestClient.serverName != null){
+							outWriter.write("Host: " + SHTTPTestClient.serverName + "\r\n");
+						}
+						outWriter.write("\r\n");
+						outWriter.flush();
+
+						// wait for a reply
+						long startedWaiting = System.currentTimeMillis();
+
+						// Receive response from network
+						String response = inReader.readLine();
+
+						// Log how much time we waited
+						waitTime += System.currentTimeMillis() - startedWaiting;
+						numWaits ++;
+
+						// Was the request ok?
+						if(response == null){
+							return;
+						}else{
+							bytesDownloaded += response.length();
+							String[]tkz = response.split(" ");
+							if(tkz.length < 2 || !tkz[1].equals("200")){
+								System.err.println("Received a bad response: " + response);
+								return;
+							}
+						}
+
+						// process response header
+						String line = inReader.readLine();
+
+						// read through each line as long as we have time
+						while(line != "" && System.currentTimeMillis() < endTime){
+
+							/* Using .length() is an underestimate of bytes,
+							** but avoids processing overhead
+							*/
+							bytesDownloaded += line.length();
+
+							// parse header
+							String[] tokens = line.split(" ");
+
+							// did we get content-length?
+							if(line.contains("Content-Length")){
+
+								// max amount of data we could get from this request
+								int responseLength = Integer.parseInt(tokens[1]);
+								char[] readInto = new char[responseLength];
+								int bytesRead = 0;
+
+								/* we give the server three chances to get its data 
+								** to client before giving up and starting a new 
+								** request
+								*/
+								int numMisses = 0;
+								while(bytesRead < responseLength 
+									&& System.currentTimeMillis() < endTime 
+									&& numMisses < 3){
+
+									// how many writes did we read this pass?
+									int bytesReadThisPass = inReader.read(readInto);
+									if(bytesReadThisPass == -1){
+										numMisses++; // server didn't respond in time
+									}else{
+										bytesRead += bytesReadThisPass;
+									}
+								}
+
+								// update how many bytes this thread has downloaded
+								bytesDownloaded += bytesRead;
+
+								if(bytesRead != responseLength){
+									Debug.DEBUG("Server promised " 
+										+ responseLength 
+										+ " bytes but only received " + bytesRead);
+								}
+								break;
+							}
+
+							// read in next header
+							line = inReader.readLine();
+						}
+
+						// finished downloading a file; request a new one
+						numFilesDownloaded++;
+
+						socket.close();
+					}catch (Exception e){
+						// encountered error - carry on
 					}
-
-					// finished downloading a file; request a new one
-					numFilesDownloaded++;
-
-					socket.close();
 				} // end for-loop over files
 			} // end timer while-loop
 
