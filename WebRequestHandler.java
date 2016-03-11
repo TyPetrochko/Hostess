@@ -101,7 +101,7 @@ class WebRequestHandler {
 
         
     } catch (Exception e) {
-        Debug.DEBUG("Encountered error, sending report and closing socket");
+        System.err.println("Encountered error, sending report and closing socket");
         e.printStackTrace();
         outputError(400, "Server error");
     } finally {
