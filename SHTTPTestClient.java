@@ -79,8 +79,8 @@ class SHTTPTestClient{
 
 		// return metrics
 		float [] metrics = new float[2];
-		metrics[1] = (float) mbps;
-		metrics[2] = (float) (Tester.totalWaitTime.get() / Tester.totalNumWaits.get());
+		metrics[0] = (float) mbps;
+		metrics[1] = (float) (Tester.totalWaitTime.get() / Tester.totalNumWaits.get());
 		return metrics;
 	} // end main
 
